@@ -1,0 +1,3 @@
+[submodule "vendor/mqtt.js"]
+	path = vendor/mqtt.js
+	url = git@github.com:mcollina/MQTT.js.git

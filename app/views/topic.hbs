@@ -1,0 +1,28 @@
+<div class="page-header">
+  <h1>Topic: {{topic}}</h1>
+</div>
+<div class="row">
+  <div class="span14">
+    <h2>Content:</h2>
+    <form>
+      <textarea class="text-message topic-value">
+        {{value.payload}}
+      </textarea>
+    </form>
+  </div>
+</div>
+
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+  socket = io.connect()
+  socket.on('connected', function() {
+    console.log("connected");
+  });
+  socket.on('disconnected', function() {
+    console.log("disconnected");
+  });
+  socket.on("/topics/{{topic}}", function(data) {
+    console.log(data);
+    $(".topic-value").val(data);
+  });
+</script>

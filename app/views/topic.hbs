@@ -3,11 +3,18 @@
 </div>
 <div class="row">
   <div class="span14">
-    <h2>Content:</h2>
-    <form>
-      <textarea class="text-message topic-value">
-        {{value.payload}}
-      </textarea>
+    <form method="post">
+      <fieldset>
+        <div class="clearfix">
+          <label for="payload">Content</label>
+          <div class="input">
+            <textarea id="payload" name="payload" class="xxlarge" rows="10">{{value.payload}}</textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <input id="update" type="submit" class="btn success" value="Update"></input>
+        </div>
+      </fieldset>
     </form>
   </div>
 </div>
@@ -15,14 +22,14 @@
 <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 <script type="text/javascript">
   socket = io.connect()
-  socket.on('connected', function() {
-    console.log("connected");
-  });
-  socket.on('disconnected', function() {
-    console.log("disconnected");
-  });
+
   socket.on("/topics/{{topic}}", function(data) {
-    console.log(data);
-    $(".topic-value").val(data);
+    $("#payload").val(data);
   });
+
+  $("#update").click(function() {
+    $.post("/topics/{{topic}}", { "_method": "put", payload: $("#payload").val() });
+    return false;
+  });
+
 </script>

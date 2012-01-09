@@ -3,7 +3,7 @@ MQTTServer = require("mqtt").MQTTServer
 
 mqtt = new MQTTServer()
 
-mqtt_client_list = []
+mqtt_client_list = {}
 
 io = null # this will be defined in the start method
 
@@ -12,13 +12,12 @@ data = {}
 publish_payload = (topic, payload) ->
   # emit the payload over mqtt
   # Iterate over our list of mqtt clients
-  for client in mqtt_client_list
+  for key, client of mqtt_client_list
     # Iterate over the client's subscriptions
     for subscription in client.subscriptions
       # If the client has a subscription matching
       # the packet...
-
-      c.publish(topic, payload) if subscription.test(topic)
+      client.publish(topic, payload) if subscription.test(topic)
 
   # store the payload for REST consumption
   try
@@ -38,11 +37,12 @@ mqtt.on 'new_client', (client) ->
       @.connack(0)
 
     client.on 'subscribe', (packet) ->
-      for subscription in packet.subscriptions.length
+      for subscription in packet.subscriptions
         # '#' is 'match anything to the end of the string' */
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
         client.subscriptions.push(reg)
+        console.log(client)
 
     client.on 'publish', (packet) ->
       publish_payload packet.topic, packet.payload
@@ -74,6 +74,10 @@ module.exports = (app) ->
     else
       value = data[topic] || { json: false, payload: "" }
       res.render 'topic.hbs', topic: req.params.topic, value: value
+
+  app.put '/topics/:topic', (req, res) ->
+    publish_payload(req.params.topic, req.body.payload)
+    res.send 204
 
   # setup websockets
   io = require('socket.io').listen(app)

@@ -2,6 +2,9 @@
 
 # Module dependencies.
 
+# add vendorized library to path
+require.paths.unshift("vendor/mqtt.js")
+
 optimist = require 'optimist'
 express = require 'express'
 path = require 'path'
@@ -33,7 +36,7 @@ require.paths.unshift("app/models")
 
 controllersPath = __dirname + "/app/controllers/"
 for controller in fs.readdirSync(controllersPath)
-  require(controllersPath + controller)(app) if controller.match /(js|coffee)$/
+  require(controller)(app) if controller.match /(js|coffee)$/
 
 # Helpers
 
@@ -63,7 +66,8 @@ start = module.exports.start = (opts={}) ->
     optionParser.showHelp()
     return 1
 
-  app.listen()
+  app.listen(opts.port)
+  require('device_bridge').start(opts.mqtt)
   console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
   console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
 

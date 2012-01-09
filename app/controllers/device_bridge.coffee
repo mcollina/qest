@@ -23,10 +23,11 @@ publish_payload = (topic, payload) ->
   try
     data[topic] = { json: true, payload: JSON.parse(payload) }
   catch e
+    console.log e
     data[topic] = { json: false, payload: payload }
 
   # emit the payload over websocket
-  io.sockets.emit "/topics/#{topic}", data[topic].payload
+  io.sockets.emit "/topics/#{topic}", data[topic]
 
 mqtt.on 'new_client', (client) ->
     console.log("New client emitted")
@@ -42,7 +43,6 @@ mqtt.on 'new_client', (client) ->
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
         client.subscriptions.push(reg)
-        console.log(client)
 
     client.on 'publish', (packet) ->
       publish_payload packet.topic, packet.payload

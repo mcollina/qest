@@ -5,10 +5,17 @@
   <div class="span14">
     <form method="post">
       <fieldset>
-        <div class="clearfix">
+        <div id="payload-field" class="clearfix">
           <label for="payload">Content</label>
           <div class="input">
-            <textarea id="payload" name="payload" class="xxlarge" rows="10" readonly>{{value.payload}}</textarea>
+            <textarea id="payload" name="payload" class="span8" rows="10" readonly></textarea>
+            <span id="payload-error" class="help-inline hide">Impossible to parse as JSON</span>
+          </div>
+        </div>
+        <div class="clearfix">
+          <label for="is-json">Validate as JSON</label>
+          <div class="input">
+            <input id="validate" type="checkbox" disabled>
           </div>
         </div>
         <div class="actions">
@@ -22,28 +29,63 @@
 </div>
 
 <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript" src="/jsonlint.js"></script>
 <script type="text/javascript">
   socket = io.connect()
 
   var textarea = $("#payload");
+  var textarea_error = $("#payload-error");
+  var textarea_field = $("#payload-field");
   var update = $("#update");
   var edit = $("#edit");
   var cancel = $("#cancel");
+  var validate = $("#validate");
 
   update.hide();
   cancel.hide();
 
-  var last_data = null;
-  socket.on("/topics/{{topic}}", function(data) {
+
+  var last_data = {{json value}};
+
+  update_content = function(data) {
     last_data = data;
     if(textarea.attr("readonly")) {
-      textarea.val(data);
+      textarea.val(data.payload);
+      if(data.json) {
+        textarea.val(JSON.stringify(data.payload, null, 4));
+        validate.attr("checked", true);
+      } else {
+        validate.removeAttr("checked");
+      }
     }
+  };
+
+  update_content(last_data);
+
+  socket.on("/topics/{{topic}}", function(data) {
+    update_content(data);
   });
 
   update.click(function() {
-    $.post("/topics/{{topic}}", { "_method": "put", payload: textarea.val() });
+    var val = textarea.val();
+    if(validate.attr("checked")) {
+      try {
+        val = JSON.stringify(jsonlint.parse(val));
+      } catch(e) {
+        console.log(e);
+        textarea.addClass("error");
+        textarea_field.addClass("error");
+        textarea_error.show();
+        return false;
+      }
+    }
+    textarea.removeClass("error");
+    textarea_field.removeClass("error");
+    textarea_error.hide();
+
+    $.post("/topics/{{topic}}", { "_method": "put", payload: val });
     textarea.attr("readonly", true);
+    validate.attr("disabled", true);
     edit.toggle();
     update.toggle();
     cancel.toggle();
@@ -52,6 +94,7 @@
 
   edit.click(function() {
     textarea.removeAttr("readonly");
+    validate.removeAttr("disabled");
     update.toggle();
     cancel.toggle();
     edit.toggle();
@@ -59,8 +102,10 @@
   });
 
   cancel.click(function() {
-    textarea.val(last_data);
+    textarea.val(last_data.payload);
+    validate.attr("checked", last_data.json);
     textarea.attr("readonly", true);
+    validate.attr("disabled", true);
     update.toggle();
     cancel.toggle();
     edit.toggle();

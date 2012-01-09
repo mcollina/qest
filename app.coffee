@@ -9,6 +9,7 @@ optimist = require 'optimist'
 express = require 'express'
 path = require 'path'
 fs = require 'fs'
+hbs = require('hbs')
 
 # Create Server
 
@@ -17,7 +18,7 @@ app = express.createServer()
 # Configuration
 
 app.configure -> 
-  app.register('.hbs', require("hbs"))
+  app.register('.hbs', hbs)
   app.set('views', __dirname + '/app/views')
   app.set('view engine', 'hbs')
   app.use(express.bodyParser())
@@ -43,6 +44,9 @@ for controller in fs.readdirSync(controllersPath)
 helpersPath = __dirname + "/app/helpers/"
 for helper in fs.readdirSync(helpersPath)
   app.helpers require(helpersPath + helper) if helper.match /(js|coffee)$/
+
+hbs.registerHelper 'json', (context) -> 
+  new hbs.SafeString(JSON.stringify(context))
 
 # Start the module if it's needed
 

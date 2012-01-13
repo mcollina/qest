@@ -1,11 +1,11 @@
-set :application, "sharpnodes"
-set :repository,  "git@github.com:Indigeni/SharpNodes.git"
+set :application, "mqtt-rest"
+set :repository,  "gitolite@repo.matteocollina.com:mqtt-rest"
 
 #set :scm, :subversion
 set :scm, :git
 # Or: `accurev`, `bzr`, `cvs`, `darcs`, `git`, `mercurial`, `perforce`, `subversion` or `none`
 
-ip = "rest-mqtt.matteocollina.com"
+ip = "callisto.matteocollina.com"
 
 role :web, ip 
 role :app, ip
@@ -16,9 +16,12 @@ set :user, "deploy"
 set :use_sudo, false
 
 set :app_port, 8000
+set :mqtt_port, 8001
 
 # support for github
 ssh_options[:forward_agent] = true
+set :git_enable_submodules, 1
+set :deploy_via, :remote_cache
 
 set :deploy_to, "/home/deploy/apps/#{application}"
 
@@ -31,7 +34,7 @@ set :normalize_asset_timestamps, false
 
 namespace :deploy do
   task :start do
-    run "cd #{current_path} && DISPLAY=:0 forever start app.js -p #{app_port}"
+    run "cd #{current_path} && DISPLAY=:0 forever start app.js -p #{app_port} -m #{mqtt_port}"
   end
 
   task :stop do 
@@ -52,11 +55,6 @@ namespace :dependencies do
   task :install do
     run "cd #{release_path} && npm install"
   end
-
-  task :install_forever do
-    run "npm install forever -g"
-  end
 end
 
-before "deploy:cold", "dependencies:install_forever"
 after "deploy:update_code", "dependencies:install"

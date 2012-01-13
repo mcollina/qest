@@ -27,7 +27,7 @@ publish_payload = (topic, payload) ->
     data[topic] = { json: false, payload: payload }
 
   # emit the payload over websocket
-  io.sockets.in("/topics/#{topic}").emit('update', data[topic])
+  io.sockets.in("/topics/#{topic}").emit("/topics/#{topic}", data[topic])
 
 mqtt.on 'new_client', (client) ->
     console.log("New client emitted")
@@ -95,7 +95,7 @@ module.exports = (app) ->
       socket.join("/topics/#{topic}")
 
       if data[topic]?
-        socket.emit('update', data[topic])
+        socket.emit("/topics/#{topic}", data[topic])
 
 module.exports.start = (port) ->
   mqtt.server.listen(port)

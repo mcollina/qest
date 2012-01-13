@@ -63,7 +63,7 @@
     socket.emit('subscribe', "{{topic}}");
   });
 
-  socket.on("update", function(data) {
+socket.on("/topics/{{topic}}", function(data) {
     update_content(data);
   });
 

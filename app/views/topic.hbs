@@ -44,8 +44,7 @@
   update.hide();
   cancel.hide();
 
-
-  var last_data = {{json value}};
+  var last_data = null;
 
   update_content = function(data) {
     last_data = data;
@@ -60,9 +59,11 @@
     }
   };
 
-  update_content(last_data);
+  socket.on("connect", function(data) {
+    socket.emit('subscribe', "{{topic}}");
+  });
 
-  socket.on("/topics/{{topic}}", function(data) {
+  socket.on("update", function(data) {
     update_content(data);
   });
 

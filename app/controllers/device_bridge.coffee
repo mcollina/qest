@@ -27,7 +27,7 @@ publish_payload = (topic, payload) ->
     data[topic] = { json: false, payload: payload }
 
   # emit the payload over websocket
-  io.sockets.emit "/topics/#{topic}", data[topic]
+  io.sockets.in("/topics/#{topic}").emit('update', data[topic])
 
 mqtt.on 'new_client', (client) ->
     console.log("New client emitted")
@@ -43,6 +43,12 @@ mqtt.on 'new_client', (client) ->
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
         client.subscriptions.push(reg)
+
+      # push the latest value to the new client,
+      # do not wait updates of the topic
+      for topic, value of data
+        for subscription in client.subscriptions
+          client.publish(topic, value.payload) if subscription.test(topic)
 
     client.on 'publish', (packet) ->
       publish_payload packet.topic, packet.payload
@@ -60,6 +66,7 @@ mqtt.on 'new_client', (client) ->
 
 module.exports = (app) ->
   app.get '/topics/:topic', (req, res) ->
+
     topic = req.params.topic
     if req.accepts 'json'
       if data[topic]?
@@ -81,6 +88,14 @@ module.exports = (app) ->
 
   # setup websockets
   io = require('socket.io').listen(app)
+
+  io.sockets.on 'connection', (socket) ->
+
+    socket.on 'subscribe', (topic) ->
+      socket.join("/topics/#{topic}")
+
+      if data[topic]?
+        socket.emit('update', data[topic])
 
 module.exports.start = (port) ->
   mqtt.server.listen(port)

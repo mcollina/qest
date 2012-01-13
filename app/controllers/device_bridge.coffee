@@ -1,7 +1,5 @@
 
-MQTTServer = require("mqtt").MQTTServer
-
-mqtt = new MQTTServer()
+mqtt = null
 
 mqtt_client_list = {}
 
@@ -29,40 +27,6 @@ publish_payload = (topic, payload) ->
   # emit the payload over websocket
   io.sockets.in("/topics/#{topic}").emit("/topics/#{topic}", data[topic])
 
-mqtt.on 'new_client', (client) ->
-    console.log("New client emitted")
-
-    client.on 'connect', (packet) ->
-      @.clientId = packet.clientId
-      mqtt_client_list[this.clientId] = @
-      @.connack(0)
-
-    client.on 'subscribe', (packet) ->
-      for subscription in packet.subscriptions
-        # '#' is 'match anything to the end of the string' */
-        # + is 'match anything but a / until you hit a /' */
-        reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
-        client.subscriptions.push(reg)
-
-      # push the latest value to the new client,
-      # do not wait updates of the topic
-      for topic, value of data
-        for subscription in client.subscriptions
-          client.publish(topic, value.payload) if subscription.test(topic)
-
-    client.on 'publish', (packet) ->
-      publish_payload packet.topic, packet.payload
-
-    client.on 'pingreq', (packet) ->
-	    client.pingresp()
-
-    client.on 'disconnect', ->
-      this.socket.end()
-      delete mqtt_client_list[this]
-
-    client.on 'error', (error) ->
-      this.socket.end()
-      delete mqtt_client_list[this]
 
 module.exports = (app) ->
   app.get '/topics/:topic', (req, res) ->
@@ -96,6 +60,43 @@ module.exports = (app) ->
 
       if data[topic]?
         socket.emit("/topics/#{topic}", data[topic])
+
+  mqtt = new app.mqtt.MQTTServer()
+
+  mqtt.on 'new_client', (client) ->
+    console.log("New client emitted")
+
+    client.on 'connect', (packet) ->
+      @.clientId = packet.clientId
+      mqtt_client_list[this.clientId] = @
+      @.connack(0)
+
+    client.on 'subscribe', (packet) ->
+      for subscription in packet.subscriptions
+        # '#' is 'match anything to the end of the string' */
+        # + is 'match anything but a / until you hit a /' */
+        reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
+        client.subscriptions.push(reg)
+
+      # push the latest value to the new client,
+      # do not wait updates of the topic
+      for topic, value of data
+        for subscription in client.subscriptions
+          client.publish(topic, value.payload) if subscription.test(topic)
+
+    client.on 'publish', (packet) ->
+      publish_payload packet.topic, packet.payload
+
+    client.on 'pingreq', (packet) ->
+	    client.pingresp()
+
+    client.on 'disconnect', ->
+      this.socket.end()
+      delete mqtt_client_list[this]
+
+    client.on 'error', (error) ->
+      this.socket.end()
+      delete mqtt_client_list[this]
 
 module.exports.start = (port) ->
   mqtt.server.listen(port)

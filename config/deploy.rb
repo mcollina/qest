@@ -28,21 +28,25 @@ set :deploy_to, "/home/deploy/apps/#{application}"
 # to avoid touching the public/javascripts public/images and public/stylesheets
 set :normalize_asset_timestamps, false
 
-# Automatically put out mantainance page during updates.
-# before "deploy", "deploy:web:disable"
-# after "deploy", "deploy:web:enable"
+$:.unshift(File.expand_path('./lib', ENV['rvm_path'])) # Add RVM's lib directory to the load path.
+require "rvm/capistrano"                  # Load RVM's capistrano plugin.
+
+set forever_start, lambda do
+  "cd #{current_path} && NODE_ENV=production forever start -p ~/forever app.js -p #{app_port} -m #{mqtt_port}"
+end
 
 namespace :deploy do
   task :start do
-    run "cd #{current_path} && DISPLAY=:0 forever start app.js -p #{app_port} -m #{mqtt_port}"
+    run forever_start
   end
 
   task :stop do 
-    run "cd #{current_path} && forever stop app.js"
+    run "cd #{current_path} && forever stop -p ~/forever app.js"
   end
 
   task :restart, :roles => :app, :except => { :no_release => true } do
     stop
+    sleep 1
     start
   end
 
@@ -57,4 +61,25 @@ namespace :dependencies do
   end
 end
 
+task :start_on_boot do
+  
+    whenever_config= ERB.new <<-EOF
+job_type :relative_command, "cd :path && :task :output"
+set :output, "log/cron.log"
+
+every :reboot do
+  relative_command "#{forever_start}"
+end
+    EOF
+
+    put whenever_config.result, "#{release_path}/config/schedule.rb" 
+end
+
 after "deploy:update_code", "dependencies:install"
+
+require 'bundler/capistrano' # to use bundler
+
+set :whenever_command, "bundle exec whenever"
+require "whenever/capistrano"
+
+before "whenever:update_crontab", "start_on_boot"

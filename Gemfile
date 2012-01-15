@@ -5,3 +5,4 @@ gem 'capistrano'
 gem 'capistrano-ext'
 
 gem 'whenever', :require => false
+gem 'i18n'

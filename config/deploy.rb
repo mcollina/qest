@@ -31,7 +31,7 @@ set :normalize_asset_timestamps, false
 $:.unshift(File.expand_path('./lib', ENV['rvm_path'])) # Add RVM's lib directory to the load path.
 require "rvm/capistrano"                  # Load RVM's capistrano plugin.
 
-set forever_start, lambda do
+set :forever_start do
   "cd #{current_path} && NODE_ENV=production forever start -p ~/forever app.js -p #{app_port} -m #{mqtt_port}"
 end
 

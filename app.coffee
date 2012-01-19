@@ -30,7 +30,7 @@ app.configure 'production', ->
   app.use(express.errorHandler())
 
 # load mqtt
-app.mqtt = require("./vendor/mqtt.js/mqtt")
+app.mqtt = require("mqttjs")
 
 app.controllers = {}
 controllersPath = __dirname + "/app/controllers/"

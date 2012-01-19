@@ -13,6 +13,7 @@
       , "hbs": "= 1.0.1"
       , "socket.io": "= 0.8.7"
       , "less": "= 1.1.5"
+      , "mqttjs": "= 0.1.1"
     },
     "devDependencies" : {
     }

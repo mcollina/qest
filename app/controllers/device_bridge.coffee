@@ -8,6 +8,7 @@ io = null # this will be defined in the start method
 data = {}
 
 publish_payload = (topic, payload) ->
+
   # emit the payload over mqtt
   # Iterate over our list of mqtt clients
   for key, client of mqtt_client_list
@@ -15,14 +16,17 @@ publish_payload = (topic, payload) ->
     for subscription in client.subscriptions
       # If the client has a subscription matching
       # the packet...
-      client.publish(topic, payload) if subscription.test(topic)
+      client.publish(topic: topic, payload: payload) if subscription.test(topic)
+
+  data[topic] = { payload: payload }
 
   # store the payload for REST consumption
   try
-    data[topic] = { json: true, payload: JSON.parse(payload) }
+    JSON.parse(payload)
+    data[topic].json = true
   catch e
-    console.log e
-    data[topic] = { json: false, payload: payload }
+    data[topic].json = false
+
 
   # emit the payload over websocket
   io.sockets.in("/topics/#{topic}").emit("/topics/#{topic}", data[topic])
@@ -61,28 +65,31 @@ module.exports = (app) ->
       if data[topic]?
         socket.emit("/topics/#{topic}", data[topic])
 
-  mqtt = new app.mqtt.MQTTServer()
-
-  mqtt.on 'new_client', (client) ->
-    console.log("New client emitted")
+  mqtt = app.mqtt.createServer (client) ->
 
     client.on 'connect', (packet) ->
-      @.clientId = packet.clientId
-      mqtt_client_list[this.clientId] = @
-      @.connack(0)
+      client.id = packet.client
+      mqtt_client_list[client.id] = client
+      client.subscriptions = []
+      client.connack(returnCode: 0)
 
     client.on 'subscribe', (packet) ->
+      granted = []
+
       for subscription in packet.subscriptions
         # '#' is 'match anything to the end of the string' */
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
         client.subscriptions.push(reg)
+        granted.push subscription
+
+      client.suback(messageId: packet.messageId, granted: granted)
 
       # push the latest value to the new client,
       # do not wait updates of the topic
       for topic, value of data
         for subscription in client.subscriptions
-          client.publish(topic, value.payload) if subscription.test(topic)
+          client.publish(topic: topic, payload: value.payload) if subscription.test(topic)
 
     client.on 'publish', (packet) ->
       publish_payload packet.topic, packet.payload
@@ -91,12 +98,14 @@ module.exports = (app) ->
 	    client.pingresp()
 
     client.on 'disconnect', ->
-      this.socket.end()
-      delete mqtt_client_list[this]
+      client.stream.end()
 
     client.on 'error', (error) ->
-      this.socket.end()
-      delete mqtt_client_list[this]
+      client.stream.end()
+      console.log(e)
+
+   	client.on 'close', (err) ->
+      delete mqtt_client_list[client.id]
 
 module.exports.start = (port) ->
-  mqtt.server.listen(port)
+  mqtt.listen(port)

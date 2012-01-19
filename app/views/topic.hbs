@@ -49,11 +49,14 @@
   update_content = function(data) {
     last_data = data;
     if(textarea.attr("readonly")) {
-      textarea.val(data.payload);
-      if(data.json) {
+      try {
+        data.payload = JSON.parse(data.payload);
+        // if we are here payload is a JSON
         textarea.val(JSON.stringify(data.payload, null, 4));
         validate.attr("checked", true);
-      } else {
+      } catch (e) {
+        // payload is not a JSON
+        textarea.val(data.payload);
         validate.removeAttr("checked");
       }
     }

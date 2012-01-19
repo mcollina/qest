@@ -20,14 +20,6 @@ publish_payload = (topic, payload) ->
 
   data[topic] = { payload: payload }
 
-  # store the payload for REST consumption
-  try
-    JSON.parse(payload)
-    data[topic].json = true
-  catch e
-    data[topic].json = false
-
-
   # emit the payload over websocket
   io.sockets.in("/topics/#{topic}").emit("/topics/#{topic}", data[topic])
 

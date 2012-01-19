@@ -82,4 +82,4 @@ require 'bundler/capistrano' # to use bundler
 set :whenever_command, "bundle exec whenever"
 require "whenever/capistrano"
 
-before "whenever:update_crontab", "start_on_boot"
+before "whenever:clear_crontab", "start_on_boot"

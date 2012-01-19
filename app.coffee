@@ -10,7 +10,7 @@ hbs = require('hbs')
 
 # Create Server
 
-app = express.createServer()
+module.exports.app = app = express.createServer()
 
 # Configuration
 
@@ -32,13 +32,19 @@ app.configure 'production', ->
 # load mqtt
 app.mqtt = require("mqttjs")
 
-app.controllers = {}
-controllersPath = __dirname + "/app/controllers/"
-for controller in fs.readdirSync(controllersPath)
-  if controller.match /(js|coffee)$/
-    controller = path.basename(controller, path.extname(controller))
-    app.controllers[controller] = require(controllersPath + controller)
-    app.controllers[controller](app)
+load = (key) ->
+  app[key] = {}
+  loadPath = __dirname + "/app/#{key}/"
+  for component in fs.readdirSync(loadPath)
+    if component.match /(js|coffee)$/
+      component = path.basename(component, path.extname(component))
+      loadedModule = require(loadPath + component)
+      component = loadedModule.name if loadedModule.name?
+      app[key][component] = loadedModule
+      app[key][component](app)
+
+load("controllers")
+load("models")
 
 # Helpers
 helpersPath = __dirname + "/app/helpers/"
@@ -75,7 +81,7 @@ start = module.exports.start = (opts={}) ->
   console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
   console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
 
-if path.resolve(argv["$0"].split(' ')[1]) == path.resolve(__filename)
+if require.main.filename == __filename
   start()
 
 

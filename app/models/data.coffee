@@ -8,60 +8,63 @@ events = null
 getEventEmitter = (key) ->
   events[key] ||= new EventEmitter()
 
-module.exports = class Data
-
-  constructor: (@key, @value) ->
+module.exports = (app) ->
   
-  getKey: () -> @key
+  class Data
 
-  getValue: () -> @value
+    constructor: (@key, @value) ->
+    
+    getKey: () -> @key
 
-  setValue: (val) -> @value = val
+    getValue: () -> @value
 
-  on: (event, callback) ->
-    getEventEmitter(@key).on('change', callback)
-    @
+    setValue: (val) -> @value = val
 
-  save: (callback) ->
-    getEventEmitter(@key).emit('change', @)
-    globalEventEmitter.emit("newData", @) unless data[@key]?
-    data[@key] = @value
-    setTimeout((=> callback(@)), 0) if callback?
-    @
+    on: (event, callback) ->
+      getEventEmitter(@key).on('change', callback)
+      @
 
-Data.findOrCreate = ->
-  args = Array.prototype.slice.call arguments
+    save: (callback) ->
+      getEventEmitter(@key).emit('change', @)
+      globalEventEmitter.emit("newData", @) unless data[@key]?
+      data[@key] = @value
+      setTimeout((=> callback(@)), 0) if callback?
+      @
 
-  key = args.shift() # first arg shifted out
+  Data.findOrCreate = ->
+    args = Array.prototype.slice.call arguments
 
-  arg = args.shift() # second arg popped out
-  if typeof arg == 'function'
-    # if the second arg is a function,
-    # then there is no third arg
-    callback = arg 
-  else
-    # if the second arg is not a function
-    # then it's the value, and the third is
-    # the callback
-    value = arg 
-    callback = args.shift()
+    key = args.shift() # first arg shifted out
 
-  currentData = new Data(key, data[key] || value)
+    arg = args.shift() # second arg popped out
+    if typeof arg == 'function'
+      # if the second arg is a function,
+      # then there is no third arg
+      callback = arg 
+    else
+      # if the second arg is not a function
+      # then it's the value, and the third is
+      # the callback
+      value = arg 
+      callback = args.shift()
 
-  unless data[key]?
-    currentData.save(callback)
-  else
-    setTimeout((-> callback(currentData)), 0) if callback?
+    currentData = new Data(key, data[key] || value)
+
+    unless data[key]?
+      currentData.save(callback)
+    else
+      setTimeout((-> callback(currentData)), 0) if callback?
+
+    Data
+
+  Data.reset = ->
+    data = {}
+    events = {}
+    globalEventEmitter.removeAllListeners()
+
+  Data.reset()
+
+  Data.on = (event, callback) ->
+    globalEventEmitter.on(event, callback)
 
   Data
-
-Data.reset = ->
-  data = {}
-  events = {}
-  globalEventEmitter.removeAllListeners()
-
-Data.reset()
-
-Data.on = (event, callback) ->
-  globalEventEmitter.on(event, callback)
-

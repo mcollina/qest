@@ -38,10 +38,9 @@ load = (key) ->
   for component in fs.readdirSync(loadPath)
     if component.match /(js|coffee)$/
       component = path.basename(component, path.extname(component))
-      loadedModule = require(loadPath + component)
+      loadedModule = require(loadPath + component)(app)
       component = loadedModule.name if loadedModule.name?
       app[key][component] = loadedModule
-      app[key][component](app)
 
 load("controllers")
 load("models")

@@ -14,10 +14,16 @@ module.exports = (app) ->
     Data.find topic, (data, err) ->
       if req.accepts 'json'
         res.contentType('json')
+        try
+          # if it's a json, we parse it and render
+          value = JSON.parse(data.getValue())
+        catch e
+          # else we transform it in string
+          value = "" + data.getValue()
         if err?
-          res.send 404
+          res.json null, 404
         else
-          res.send data[topic].payload
+          res.json value
       else
         res.render 'topic.hbs', topic: req.params.topic
 

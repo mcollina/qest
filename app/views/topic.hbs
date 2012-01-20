@@ -47,6 +47,7 @@
   var last_data = null;
 
   update_content = function(data) {
+    data = { payload: data }
     last_data = data;
     if(textarea.attr("readonly")) {
       try {

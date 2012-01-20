@@ -21,7 +21,11 @@ module.exports = (app) ->
     setValue: (val) -> @value = val
 
     on: (event, callback) ->
-      getEventEmitter(@key).on('change', callback)
+      getEventEmitter(@key).on(event, callback)
+      @
+
+    removeListener: (event, callback) ->
+      getEventEmitter(@key).removeListener(event, callback)
       @
 
     save: (callback) ->
@@ -30,6 +34,21 @@ module.exports = (app) ->
       data[@key] = @value
       setTimeout((=> callback(@)), 0) if callback?
       @
+
+  doCallback = (key, value, callback) ->
+    error = "Record not found" unless value?
+    setTimeout((-> callback(new Data(key, value), error)), 0) if callback?
+
+  Data.find = (key, callback) ->
+    
+    if key.constructor != RegExp
+      doCallback(key, data[key], callback)
+    else
+      for topic, value of data
+        if key.test(topic)
+          doCallback(topic, value, callback)
+
+    Data
 
   Data.findOrCreate = ->
     args = Array.prototype.slice.call arguments
@@ -48,9 +67,10 @@ module.exports = (app) ->
       value = arg 
       callback = args.shift()
 
-    currentData = new Data(key, data[key] || value)
+    currentData = new Data(key, data[key])
 
-    unless data[key]?
+    if value?
+      currentData.setValue(value)
       currentData.save(callback)
     else
       setTimeout((-> callback(currentData)), 0) if callback?
@@ -66,5 +86,10 @@ module.exports = (app) ->
 
   Data.on = (event, callback) ->
     globalEventEmitter.on(event, callback)
+    @
+
+  Data.removeListener = (event, callback) ->
+    globalEventEmitter.removeListener(event, callback)
+    @
 
   Data

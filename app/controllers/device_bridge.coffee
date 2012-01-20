@@ -1,46 +1,25 @@
 
 mqtt = null
 
-mqtt_client_list = {}
-
 io = null # this will be defined in the start method
 
-data = {}
-
-publish_payload = (topic, payload) ->
-
-  # emit the payload over mqtt
-  # Iterate over our list of mqtt clients
-  for key, client of mqtt_client_list
-    # Iterate over the client's subscriptions
-    for subscription in client.subscriptions
-      # If the client has a subscription matching
-      # the packet...
-      client.publish(topic: topic, payload: payload) if subscription.test(topic)
-
-  data[topic] = { payload: payload }
-
-  # emit the payload over websocket
-  io.sockets.in("/topics/#{topic}").emit("/topics/#{topic}", data[topic])
-
-
 module.exports = (app) ->
-  app.get '/topics/:topic', (req, res) ->
+  Data = app.models.Data
 
+  publish_payload = (topic, payload) ->
+    Data.findOrCreate topic, payload
+
+  app.get '/topics/:topic', (req, res) ->
     topic = req.params.topic
-    if req.accepts 'json'
-      if data[topic]?
-        if data[topic].json
-          res.contentType('json')
-          res.send data[topic].payload
+    Data.find topic, (data, err) ->
+      if req.accepts 'json'
+        res.contentType('json')
+        if err?
+          res.send 404
         else
-          # it's not a json, don't emit a contentType
           res.send data[topic].payload
       else
-        res.send "Topic not found!", 404
-    else
-      value = data[topic] || { json: false, payload: "" }
-      res.render 'topic.hbs', topic: req.params.topic, value: value
+        res.render 'topic.hbs', topic: req.params.topic
 
   app.put '/topics/:topic', (req, res) ->
     publish_payload(req.params.topic, req.body.payload)
@@ -51,37 +30,70 @@ module.exports = (app) ->
 
   io.sockets.on 'connection', (socket) ->
 
-    socket.on 'subscribe', (topic) ->
-      socket.join("/topics/#{topic}")
+    subscriptions = {}
 
-      if data[topic]?
-        socket.emit("/topics/#{topic}", data[topic])
+    socket.on 'subscribe', (topic) ->
+
+      Data.findOrCreate topic, (data) ->
+
+        subscription = (currentData) ->
+          socket.emit("/topics/#{topic}", currentData.getValue())
+
+        subscriptions[topic] = subscription
+
+        data.on('change', subscription)
+
+        subscription(data) if data.getValue()
+
+    socket.on 'disconnect', ->
+
+      for topic, listener of subscriptions
+        Data.findOrCreate topic, (data) ->
+          data.removeListener('change', listener)
 
   mqtt = app.mqtt.createServer (client) ->
 
+    listeners = {}
+    globalListener = null
+
     client.on 'connect', (packet) ->
       client.id = packet.client
-      mqtt_client_list[client.id] = client
-      client.subscriptions = []
       client.connack(returnCode: 0)
 
     client.on 'subscribe', (packet) ->
       granted = []
+      subscriptions = []
 
       for subscription in packet.subscriptions
         # '#' is 'match anything to the end of the string' */
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
-        client.subscriptions.push(reg)
+        subscriptions.push(reg)
         granted.push subscription
 
       client.suback(messageId: packet.messageId, granted: granted)
 
+      addListener = (data) ->
+
+        listener = (currentData) ->
+          client.publish(topic: currentData.getKey(), payload: currentData.getValue())
+
+        data.on 'change', listener
+
+        listeners[data.getKey()] = listener
+
+        listener(data) if data.getValue()?
+
       # push the latest value to the new client,
       # do not wait updates of the topic
-      for topic, value of data
-        for subscription in client.subscriptions
-          client.publish(topic: topic, payload: value.payload) if subscription.test(topic)
+      for subscription in subscriptions
+        Data.find subscription, addListener
+
+      globalListener = (data) ->
+        for subscription in subscriptions
+          addListener(data) if subscription.test(data.getKey())
+
+      Data.on 'newData', globalListener
 
     client.on 'publish', (packet) ->
       publish_payload packet.topic, packet.payload
@@ -97,7 +109,12 @@ module.exports = (app) ->
       console.log(e)
 
    	client.on 'close', (err) ->
-      delete mqtt_client_list[client.id]
+      Data.removeListener('newData', globalListener) if globalListener?
+      for topic, listener of listeners
+        Data.find topic, (data) ->
+          data.removeListener('change', listener)
 
-module.exports.start = (port) ->
-  mqtt.listen(port)
+  return { 
+    start: (port) ->
+      mqtt.listen(port)
+  }

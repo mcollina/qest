@@ -42,8 +42,8 @@ load = (key) ->
       component = loadedModule.name if loadedModule.name?
       app[key][component] = loadedModule
 
-load("controllers")
 load("models")
+load("controllers")
 
 # Helpers
 helpersPath = __dirname + "/app/helpers/"

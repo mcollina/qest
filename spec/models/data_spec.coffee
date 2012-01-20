@@ -23,6 +23,26 @@ describe "Data", ->
 
     waitsFor((-> called), 500)
 
+  it "should findOrCreate an old instance overriding the value", ->
+    called = false
+    @models.Data.findOrCreate "aaa", "bbbb", =>
+      @models.Data.findOrCreate "aaa", "ccc", =>
+        @models.Data.find "aaa", (data) =>
+          called = true
+          expect(data).toEqual(new @models.Data("aaa", "ccc"))
+
+    waitsFor((-> called), 500)
+
+  it "should emit a change event when findOrCreate does not override the value", ->
+    called = false
+    @models.Data.findOrCreate "aaa", "bbbb", (oldData) =>
+
+      oldData.on 'change', (data) => called = true
+
+      @models.Data.findOrCreate "aaa", "bbbb"
+
+    waitsFor((-> called), 500)
+
   it "should provide a global event for registering for new data (fired by findOrCreate)", ->
     called = false
     @models.Data.on "newData", (data) =>
@@ -42,6 +62,47 @@ describe "Data", ->
     waitsFor((-> called), 500)
 
     new @models.Data("hello world", "ggg").save()
+
+  it "should provide a find method to detected if an object exists", ->
+
+    called = false
+    @models.Data.find "obj", (data, err) =>
+      called = true
+      expect(err).toEqual("Record not found")
+
+    waitsFor((-> called), 500)
+
+  it "should provide a find method that returns an error if there is no obj", ->
+
+    called = false
+
+    @models.Data.find "obj", (data, err) =>
+      called = true
+      expect(err).toEqual("Record not found")
+
+    waitsFor((-> called), 500)
+
+  it "should provide a find method that uses a regexp for matching", ->
+
+    createdBob = false
+    @models.Data.findOrCreate("hello bob", "aaa", (-> createdBob = true))
+
+    createdMark = false
+    @models.Data.findOrCreate("hello mark", "aaa", (-> createdMark = true))
+
+    waitsFor((-> createdBob and createdMark), 500)
+
+    results = []
+    runs =>
+      @models.Data.find /hello .*/, (data, err) ->
+        results.push(data.getKey()) unless err?
+
+    waitsFor((-> results.length == 2), 500)
+
+    runs =>
+      expect(results).toContain("hello bob")
+      expect(results).toContain("hello mark")
+
 
   describe "instance", ->
 
@@ -85,10 +146,19 @@ describe "Data", ->
       @subject.setValue("aaaa")
       @subject.save()
 
-    it "should save and find", ->
+    it "should save and findOrCreate", ->
       called = false
       @subject.save =>
         @models.Data.findOrCreate @subject.getKey(), (data) =>
+          called = true
+          expect(data).toEqual(@subject)
+
+      waitsFor((-> called), 500)
+
+    it "should save and find", ->
+      called = false
+      @subject.save =>
+        @models.Data.find @subject.getKey(), (data) =>
           called = true
           expect(data).toEqual(@subject)
 
@@ -98,7 +168,7 @@ describe "Data", ->
       called = false
       @subject.save =>
         @subject.setValue("ccc")
-        @models.Data.findOrCreate @subject.getKey(), (data) ->
+        @models.Data.find @subject.getKey(), (data) ->
           called = true
           expect(data.getValue()).toNotEqual("ccc")
 

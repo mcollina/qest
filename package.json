@@ -14,6 +14,8 @@
       , "socket.io": "= 0.8.7"
       , "less": "= 1.1.5"
       , "mqttjs": "= 0.1.1"
+      , "redis": "= 0.7.1"
+      , "hiredis": "= 0.1.13"
     },
     "devDependencies" : {
     }

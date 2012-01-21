@@ -6,7 +6,8 @@ optimist = require 'optimist'
 express = require 'express'
 path = require 'path'
 fs = require 'fs'
-hbs = require('hbs')
+hbs = require 'hbs'
+redis = require 'redis'
 
 # Create Server
 
@@ -55,21 +56,37 @@ hbs.registerHelper 'json', (context) ->
 
 # Start the module if it's needed
 
-optionParser = optimist.default('port', 3000).default('mqtt', 1883).
-  usage("Usage: $0 [-p WEB-PORT] [-m MQTT-PORT]").
+optionParser = optimist.
+  default('port', 3000).
+  default('mqtt', 1883).
+  default('redis-port', 6379).
+  default('redis-host', '127.0.0.1').
+  usage("Usage: $0 [-p WEB-PORT] [-m MQTT-PORT] [-rp REDIS-PORT] [-rh REDIS-HOST]").
   alias('port', 'p').
   alias('mqtt', 'm').
+  alias('redis-port', 'rp').
+  alias('redis-host', 'rh').
   describe('port', 'The port the web server will listen to').
   describe('mqtt', 'The port the mqtt server will listen to').
+  describe('redis-port', 'The port of the redis server').
+  describe('redis-host', 'The host of the redis server').
   boolean("help").
   describe("help", "This help")
 
 argv = optionParser.argv
 
+app.redis = {}
+setupRedis = ->
+  args = Array.prototype.slice.call(arguments)
+  app.redis.pubsub = redis.createClient(args...)
+  app.redis.client = redis.createClient(args...)
+
 start = module.exports.start = (opts={}) ->
 
   opts.port ||= argv.port
   opts.mqtt ||= argv.mqtt
+  opts.redisPort ||= argv.redisPort
+  opts.redisHost ||= argv.redisHost
 
   if argv.help
     optionParser.showHelp()
@@ -77,6 +94,7 @@ start = module.exports.start = (opts={}) ->
 
   app.listen(opts.port)
   app.controllers.device_bridge.start(opts.mqtt)
+  setupRedis(opts.redisPort, opts.redisHost)
   console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
   console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
 

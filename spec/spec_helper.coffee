@@ -10,4 +10,5 @@ beforeEach ->
 
 afterEach ->
   @app.redis.client.end()
+  @app.redis.pubsub.unsubscribe()
   @app.redis.pubsub.end()

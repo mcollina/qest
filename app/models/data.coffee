@@ -4,12 +4,26 @@ EventEmitter = require('events').EventEmitter
 globalEventEmitter = new EventEmitter()
 events = null
 
-getEventEmitter = (key) ->
-  events[key] ||= new EventEmitter()
-
 KEYS_SET_NAME = 'keys'
 
 module.exports = (app) ->
+
+  getEventEmitter = (key) ->
+    unless events[key]?
+      events[key] = new EventEmitter()
+      app.redis.pubsub.subscribe(key)
+
+    events[key]
+
+  app.redis.on 'connect', ->
+    app.redis.pubsub.subscribe('newData')
+
+    app.redis.pubsub.on 'message', (topic, value) ->
+      if topic != 'newData'
+        data = new Data(topic, value)
+        getEventEmitter(topic).emit('change', data)
+      else
+        Data.find value, (data) -> globalEventEmitter.emit("newData", data)
   
   class Data
 
@@ -31,11 +45,12 @@ module.exports = (app) ->
       @
 
     save: (callback) ->
-      getEventEmitter(@key).emit('change', @)
 
       app.redis.client.sismember KEYS_SET_NAME, @key, (err, result) =>
-        globalEventEmitter.emit("newData", @) if result == 0
+        app.redis.client.publish("newData", @key) if result == 0
         app.redis.client.sadd(KEYS_SET_NAME, @key)
+
+      app.redis.client.publish(@key, @value)
 
       app.redis.client.set @key, @value, (=> callback(@) if callback?)
 

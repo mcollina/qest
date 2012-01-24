@@ -8,6 +8,7 @@ path = require 'path'
 fs = require 'fs'
 hbs = require 'hbs'
 redis = require 'redis'
+EventEmitter = require('events').EventEmitter
 
 # Create Server
 
@@ -15,7 +16,7 @@ module.exports.app = app = express.createServer()
 
 # Configuration
 
-app.redis = {} # need to create this before loading everything else
+app.redis = new EventEmitter() # need to create this before loading everything else
 
 app.configure -> 
   app.register('.hbs', hbs)
@@ -85,6 +86,8 @@ module.exports.setupRedis = setupRedis = (opts = {}) ->
   app.redis.pubsub.select(opts.db || 0)
   app.redis.client = redis.createClient(args...)
   app.redis.client.select(opts.db || 0)
+
+  app.redis.emit('connect')
 
 start = module.exports.start = (opts={}) ->
 

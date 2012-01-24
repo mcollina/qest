@@ -34,6 +34,21 @@ module.exports = (app) ->
   # setup websockets
   io = require('socket.io').listen(app)
 
+  io.configure 'production', ->
+    io.enable('browser client minification');  # send minified client
+    io.enable('browser client etag');          # apply etag caching logic based on version number
+    io.enable('browser client gzip');          # gzip the file
+    io.set('log level', 1)
+
+    io.set('transports', [
+      'htmlfile'
+    , 'xhr-polling'
+    , 'jsonp-polling'
+    ])
+
+  io.configure 'development', ->
+    io.set('transports', ['websocket'])
+
   io.sockets.on 'connection', (socket) ->
 
     subscriptions = {}

@@ -10,6 +10,7 @@ hbs = require 'hbs'
 redis = require 'redis'
 EventEmitter = require('events').EventEmitter
 connect = require 'connect'
+cless = require 'connect-less'
 
 # Create Server
 
@@ -26,6 +27,7 @@ app.configure ->
   app.use(connect.logger())
   app.use(express.bodyParser())
   app.use(express.methodOverride())
+  app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
   app.use(app.router)
   app.use(express.static(__dirname + '/public'))
 

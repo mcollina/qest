@@ -9,6 +9,7 @@ fs = require 'fs'
 hbs = require 'hbs'
 redis = require 'redis'
 EventEmitter = require('events').EventEmitter
+connect = require 'connect'
 
 # Create Server
 
@@ -22,6 +23,7 @@ app.configure ->
   app.register('.hbs', hbs)
   app.set('views', __dirname + '/app/views')
   app.set('view engine', 'hbs')
+  app.use(connect.logger())
   app.use(express.bodyParser())
   app.use(express.methodOverride())
   app.use(app.router)

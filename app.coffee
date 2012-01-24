@@ -15,6 +15,8 @@ module.exports.app = app = express.createServer()
 
 # Configuration
 
+app.redis = {} # need to create this before loading everything else
+
 app.configure -> 
   app.register('.hbs', hbs)
   app.set('views', __dirname + '/app/views')
@@ -61,11 +63,13 @@ optionParser = optimist.
   default('mqtt', 1883).
   default('redis-port', 6379).
   default('redis-host', '127.0.0.1').
+  default('redis-db', 0).
   usage("Usage: $0 [-p WEB-PORT] [-m MQTT-PORT] [-rp REDIS-PORT] [-rh REDIS-HOST]").
   alias('port', 'p').
   alias('mqtt', 'm').
   alias('redis-port', 'rp').
   alias('redis-host', 'rh').
+  alias('redis-db', 'rd').
   describe('port', 'The port the web server will listen to').
   describe('mqtt', 'The port the mqtt server will listen to').
   describe('redis-port', 'The port of the redis server').
@@ -75,18 +79,20 @@ optionParser = optimist.
 
 argv = optionParser.argv
 
-app.redis = {}
-setupRedis = ->
-  args = Array.prototype.slice.call(arguments)
+module.exports.setupRedis = setupRedis = (opts = {}) ->
+  args = [opts.port, opts.host]
   app.redis.pubsub = redis.createClient(args...)
+  app.redis.pubsub.select(opts.db || 0)
   app.redis.client = redis.createClient(args...)
+  app.redis.client.select(opts.db || 0)
 
 start = module.exports.start = (opts={}) ->
 
   opts.port ||= argv.port
   opts.mqtt ||= argv.mqtt
-  opts.redisPort ||= argv.redisPort
-  opts.redisHost ||= argv.redisHost
+  opts.redisPort ||= argv['redis-port']
+  opts.redisHost ||= argv['redis-host']
+  opts.redisDB ||= argv['redis-db']
 
   if argv.help
     optionParser.showHelp()
@@ -94,7 +100,7 @@ start = module.exports.start = (opts={}) ->
 
   app.listen(opts.port)
   app.controllers.device_bridge.start(opts.mqtt)
-  setupRedis(opts.redisPort, opts.redisHost)
+  setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
   console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
 

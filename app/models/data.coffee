@@ -2,17 +2,19 @@
 EventEmitter = require('events').EventEmitter
 
 globalEventEmitter = new EventEmitter()
-data = null
 events = null
 
 getEventEmitter = (key) ->
   events[key] ||= new EventEmitter()
+
+KEYS_SET_NAME = 'keys'
 
 module.exports = (app) ->
   
   class Data
 
     constructor: (@key, @value) ->
+      @value ||= null
     
     getKey: () -> @key
 
@@ -30,23 +32,28 @@ module.exports = (app) ->
 
     save: (callback) ->
       getEventEmitter(@key).emit('change', @)
-      globalEventEmitter.emit("newData", @) unless data[@key]?
-      data[@key] = @value
-      setTimeout((=> callback(@)), 0) if callback?
+
+      app.redis.client.sismember KEYS_SET_NAME, @key, (err, result) =>
+        globalEventEmitter.emit("newData", @) if result == 0
+        app.redis.client.sadd(KEYS_SET_NAME, @key)
+
+      app.redis.client.set @key, @value, (=> callback(@) if callback?)
+
       @
 
-  doCallback = (key, value, callback) ->
-    error = "Record not found" unless value?
-    setTimeout((-> callback(new Data(key, value), error)), 0) if callback?
+  Data.find = (pattern, callback) ->
 
-  Data.find = (key, callback) ->
-    
-    if key.constructor != RegExp
-      doCallback(key, data[key], callback)
+    foundRecord = (key) ->
+      app.redis.client.get key, (err, value) ->
+        error = "Record not found" unless value?
+        callback(new Data(key, value), error) if callback?
+
+    if pattern.constructor != RegExp
+      foundRecord(pattern)
     else
-      for topic, value of data
-        if key.test(topic)
-          doCallback(topic, value, callback)
+      app.redis.client.smembers KEYS_SET_NAME, (err, topics) ->
+        for topic in topics
+          foundRecord(topic) if pattern.test(topic)
 
     Data
 
@@ -67,18 +74,18 @@ module.exports = (app) ->
       value = arg 
       callback = args.shift()
 
-    currentData = new Data(key, data[key])
-
-    if value?
-      currentData.setValue(value)
-      currentData.save(callback)
-    else
-      setTimeout((-> callback(currentData)), 0) if callback?
+    # FIXME this is not atomic, is it a problem?
+    app.redis.client.get key, (err, oldValue) ->
+      data = new Data(key, oldValue)
+      if value?
+        data.setValue(value)
+        data.save(callback)
+      else
+        callback(data) if callback?
 
     Data
 
   Data.reset = ->
-    data = {}
     events = {}
     globalEventEmitter.removeAllListeners()
 

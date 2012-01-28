@@ -11,7 +11,7 @@ redis = require 'redis'
 EventEmitter = require('events').EventEmitter
 connect = require 'connect'
 cless = require 'connect-less'
-
+RedisStore = require('connect-redis')(express)
 # Create Server
 
 module.exports.app = app = express.createServer()
@@ -20,22 +20,34 @@ module.exports.app = app = express.createServer()
 
 app.redis = new EventEmitter() # need to create this before loading everything else
 
-app.configure -> 
-  app.register('.hbs', hbs)
-  app.set('views', __dirname + '/app/views')
-  app.set('view engine', 'hbs')
-  app.use(connect.logger())
-  app.use(express.bodyParser())
-  app.use(express.methodOverride())
-  app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
-  app.use(app.router)
-  app.use(express.static(__dirname + '/public'))
+module.exports.configure = ->
+  app.configure -> 
+    app.register('.hbs', hbs)
+    app.set('views', __dirname + '/app/views')
+    app.set('view engine', 'hbs')
+    app.use(connect.logger())
+    app.use(express.bodyParser())
+    app.use(express.methodOverride())
+    app.use(connect.cookieParser())
+    app.use(connect.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", store: new RedisStore()))
+    app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
+    app.use(app.router)
+    app.use(express.static(__dirname + '/public'))
 
-app.configure 'development', ->
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
+  app.configure 'development', ->
+    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
 
-app.configure 'production', ->
-  app.use(express.errorHandler())
+  app.configure 'production', ->
+    app.use(express.errorHandler())
+
+  # Helpers
+  helpersPath = __dirname + "/app/helpers/"
+  for helper in fs.readdirSync(helpersPath)
+    app.helpers require(helpersPath + helper) if helper.match /(js|coffee)$/
+
+  load("models")
+  load("controllers")
+
 
 # load mqtt
 app.mqtt = require("mqttjs")
@@ -50,13 +62,6 @@ load = (key) ->
       component = loadedModule.name if loadedModule.name?
       app[key][component] = loadedModule
 
-load("models")
-load("controllers")
-
-# Helpers
-helpersPath = __dirname + "/app/helpers/"
-for helper in fs.readdirSync(helpersPath)
-  app.helpers require(helpersPath + helper) if helper.match /(js|coffee)$/
 
 hbs.registerHelper 'json', (context) -> 
   new hbs.SafeString(JSON.stringify(context))
@@ -105,9 +110,11 @@ start = module.exports.start = (opts={}) ->
     optionParser.showHelp()
     return 1
 
+  setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
+  configure()
+
   app.listen(opts.port)
   app.controllers.device_bridge.start(opts.mqtt)
-  setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
   console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
 

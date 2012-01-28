@@ -1,4 +1,5 @@
 
 module.exports = (app) ->
   app.get '/', (req, res) ->
-    res.render 'home.hbs'
+    req.session.topics ||= []
+    res.render 'home.hbs', topics: req.session.topics

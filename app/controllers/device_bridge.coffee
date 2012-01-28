@@ -11,6 +11,16 @@ module.exports = (app) ->
 
   app.get '/topics/:topic', (req, res) ->
     topic = req.params.topic
+
+    topics = req.session.topics || []
+    index = topics.indexOf(topic)
+    console.log index
+    if index >= 0
+      topics = [].concat(topics.splice(0, index), topics.splice(index + 1, req.session.topics.length))
+    topics.push(topic)
+    topics.pull() if topics.length > 5
+    req.session.topics = topics
+
     Data.find topic, (data, err) ->
       if req.accepts 'json'
         res.contentType('json')

@@ -7,6 +7,18 @@
     wwhwh
   </div>
   <div class="span6 topic-bar">
+    <h2>Your latest topics</h2>
+    {{#if topics.length }}
+      <ul>
+      {{#each topics}}
+        <li><a href="/topics/{{this}}">{{this}}</a></li>
+      {{/each}}
+      </ul>
+    {{else}}
+    <p>
+      No topics found, let's open a new one!
+    </p>
+    {{/if}}
     <form id="go" method="get">
       <h2>Open your topic</h2>
       <input type="text" id="topic" name="topic" class="large" rows="10" placeholder="Enter the topic name"></input>

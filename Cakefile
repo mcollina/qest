@@ -10,8 +10,13 @@ run_external = (command, args=[], callback) ->
   child.stderr.on "data", (data) -> process.stderr.write(data)
   child.on('exit', callback) if callback?
 
-task "spec", ->
-  run_external "./node_modules/jasmine-node/bin/jasmine-node", ["--coffee", "."]
+launchSpec = (args...) ->
+  child_process.exec 'find test -iname \'*spec.coffee\'', (err, stdout, stderr) ->
+    files = stdout.trim().split("\n")
+    run_external "./node_modules/.bin/mocha", args.concat(files)
 
-task "ci", ->
-  run_external "./node_modules/jasmine-node/bin/jasmine-node", ["--autotest", "--coffee", "."]
+task "spec", ->
+  launchSpec()
+
+task "spec:ci", ->
+  launchSpec("--watch")

@@ -2,7 +2,7 @@
 EventEmitter = require('events').EventEmitter
 
 globalEventEmitter = new EventEmitter()
-events = null
+events = {}
 
 KEYS_SET_NAME = 'keys'
 
@@ -15,16 +15,15 @@ module.exports = (app) ->
 
     events[key]
 
-  app.redis.on 'connect', ->
-    app.redis.pubsub.subscribe('newData')
+  app.redis.pubsub.subscribe('newData')
 
-    app.redis.pubsub.on 'message', (topic, value) ->
-      if topic != 'newData'
-        data = new Data(topic, value)
-        getEventEmitter(topic).emit('change', data)
-      else
-        Data.find value, (data) -> globalEventEmitter.emit("newData", data)
-  
+  app.redis.pubsub.on 'message', (topic, value) ->
+    if topic != 'newData'
+      data = new Data(topic, value)
+      getEventEmitter(topic).emit('change', data)
+    else
+      Data.find value, (data) -> globalEventEmitter.emit("newData", data)
+
   class Data
 
     constructor: (@key, @value) ->
@@ -37,6 +36,7 @@ module.exports = (app) ->
     setValue: (val) -> @value = val
 
     on: (event, callback) ->
+      app.redis.pubsub.subscribe(@key)
       getEventEmitter(@key).on(event, callback)
       @
 
@@ -47,12 +47,13 @@ module.exports = (app) ->
     save: (callback) ->
 
       app.redis.client.sismember KEYS_SET_NAME, @key, (err, result) =>
-        app.redis.client.publish("newData", @key) if result == 0
-        app.redis.client.sadd(KEYS_SET_NAME, @key)
+        if result == 0
+          app.redis.client.publish("newData", @key)
+          app.redis.client.sadd(KEYS_SET_NAME, @key)
+        else
+          app.redis.client.publish(@key, @value)
 
-      app.redis.client.publish(@key, @value)
-
-      app.redis.client.set @key, @value, (=> callback(@) if callback?)
+        app.redis.client.set @key, @value, (=> callback(@) if callback?)
 
       @
 
@@ -101,7 +102,9 @@ module.exports = (app) ->
     Data
 
   Data.reset = ->
-    events = {}
+    for key, event of events
+      app.redis.pubsub.unsubscribe(key)
+      delete events[key]
     globalEventEmitter.removeAllListeners()
 
   Data.reset()

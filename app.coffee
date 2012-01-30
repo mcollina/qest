@@ -18,9 +18,9 @@ module.exports.app = app = express.createServer()
 
 # Configuration
 
-app.redis = new EventEmitter() # need to create this before loading everything else
+app.redis = {}
 
-module.exports.configure = ->
+module.exports.configure = configure = ->
   app.configure -> 
     app.register('.hbs', hbs)
     app.set('views', __dirname + '/app/views')
@@ -95,8 +95,6 @@ module.exports.setupRedis = setupRedis = (opts = {}) ->
   app.redis.pubsub.select(opts.db || 0)
   app.redis.client = redis.createClient(args...)
   app.redis.client.select(opts.db || 0)
-
-  app.redis.emit('connect')
 
 start = module.exports.start = (opts={}) ->
 

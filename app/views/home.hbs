@@ -4,7 +4,30 @@
 </div>
 <div class="row">
   <div class="span7">
-    wwhwh
+{{#markdown}}
+Hello geeks!
+
+What you are seeing here is a prototype of a distributed [MQTT](http://mqtt.org) broker which is accessible through REST.
+That's a lot of jargon, so let's focus a bit!
+
+Here we are dreaming a Web of Things, where you can reach (and interact) with each of your "real" devices using the web,
+as it's the Way everybody interacts with a computer these days.
+However it's somewhat hard to build these kind of apps, so researchers have written custom protocols for communicating 
+with the devices.
+The state-of-the-art seems to be [MQTT](http://mqtt.org), which is standard, free of royalties, and widespread: 
+there are libraries for all the major platforms.
+
+MQTT-REST is a stargate between the universe of devices which speak MQTT, and the universe of apps which
+speak HTTP.
+In this way you don't have to deal any custom protocol, you just GET and PUT the topic URI, like these:
+
+    $ curl -X PUT -d '{ "payload": 555 }' \
+    -H "Content-Type: application/json" \
+    http://mqtt.matteocollina.com/topics/prova
+    $ curl http://mqtt.matteocollina.com/topics/prova
+    555
+
+{{/markdown}}
   </div>
   <div class="span6 topic-bar">
     <h2>Your latest topics</h2>
@@ -24,6 +47,21 @@
       <input type="text" id="topic" name="topic" class="large" rows="10" placeholder="Enter the topic name"></input>
       <input type="submit" class="btn primary" value="GO!"></input>
     </form>
+  </div>
+</div>
+<div class="row">
+  <div class="span13">
+{{#markdown}}
+NetworkButton Example
+-----
+
+NetworkButton is a forest of network enabled leds that switch on and off on simultaneosly.
+It's also an example with MQTT-REST.
+
+Let's build your own!
+{{/markdown}}
+    <img src="/images/schema.png">
+    <script src="https://gist.github.com/1704547.js"> </script>
   </div>
 </div>
 

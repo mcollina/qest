@@ -19,6 +19,7 @@
       , "connect": "1.x"
       , "connect-less": "0.2.2"
       , "connect-redis" : "1.2.0"
+      , "markdown" : "0.3.1"
     },
     "devDependencies" : {
       "mocha" : "= 0.10.2",

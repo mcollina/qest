@@ -66,6 +66,11 @@ load = (key) ->
 hbs.registerHelper 'json', (context) -> 
   new hbs.SafeString(JSON.stringify(context))
 
+hbs.registerHelper 'markdown', (options) ->
+  input = options.fn(@)
+  result = require( "markdown" ).markdown.toHTML(input)
+  return result
+
 # Start the module if it's needed
 
 optionParser = optimist.

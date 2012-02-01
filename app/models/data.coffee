@@ -97,11 +97,8 @@ module.exports = (app) ->
     # FIXME this is not atomic, is it a problem?
     app.redis.client.get buildKey(key), (err, oldValue) ->
       data = new Data(key, oldValue)
-      if value?
-        data.setValue(value)
-        data.save(callback)
-      else
-        callback(data) if callback?
+      data.setValue(value) if value?
+      data.save(callback)
 
     Data
 

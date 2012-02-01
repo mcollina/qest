@@ -48,6 +48,15 @@ describe "Data", ->
       done()
     models.Data.findOrCreate("hello world", "ggg")
 
+  it "should allow subscribing in the create step", (done) ->
+    models.Data.findOrCreate "aaa", (data) =>
+      data.on 'change', (curr) ->
+        done()
+        expect(data).to.eql(new models.Data("aaa", "ccc"))
+
+      data.setValue("ccc")
+      data.save()
+
   it "should provide a global event for registering for new data (fired by save)", (done) ->
     models.Data.on "newData", (data) =>
       expect(data).to.eql(new models.Data("hello world", "ggg"))

@@ -4,7 +4,7 @@ EventEmitter = require('events').EventEmitter
 globalEventEmitter = new EventEmitter()
 events = {}
 
-KEYS_SET_NAME = 'keys'
+KEYS_SET_NAME = 'topics'
 
 module.exports = (app) ->
 
@@ -15,10 +15,14 @@ module.exports = (app) ->
 
     events[key]
 
+  buildKey = (key) ->
+    "topic:" + key
+
   app.redis.pubsub.subscribe('newData')
 
   app.redis.pubsub.on 'message', (topic, value) ->
     if topic != 'newData'
+      topic = topic.split(":")[1..-1].join("")
       data = new Data(topic, value)
       getEventEmitter(topic).emit('change', data)
     else
@@ -36,7 +40,7 @@ module.exports = (app) ->
     setValue: (val) -> @value = val
 
     on: (event, callback) ->
-      app.redis.pubsub.subscribe(@key)
+      app.redis.pubsub.subscribe(buildKey(@key))
       getEventEmitter(@key).on(event, callback)
       @
 
@@ -51,16 +55,16 @@ module.exports = (app) ->
           app.redis.client.publish("newData", @key)
           app.redis.client.sadd(KEYS_SET_NAME, @key)
         else
-          app.redis.client.publish(@key, @value)
+          app.redis.client.publish(buildKey(@key), @value)
 
-        app.redis.client.set @key, @value, (=> callback(@) if callback?)
+        app.redis.client.set buildKey(@key), @value, (=> callback(@) if callback?)
 
       @
 
   Data.find = (pattern, callback) ->
 
     foundRecord = (key) ->
-      app.redis.client.get key, (err, value) ->
+      app.redis.client.get buildKey(key), (err, value) ->
         error = "Record not found" unless value?
         callback(new Data(key, value), error) if callback?
 
@@ -91,7 +95,7 @@ module.exports = (app) ->
       callback = args.shift()
 
     # FIXME this is not atomic, is it a problem?
-    app.redis.client.get key, (err, oldValue) ->
+    app.redis.client.get buildKey(key), (err, oldValue) ->
       data = new Data(key, oldValue)
       if value?
         data.setValue(value)
@@ -103,7 +107,7 @@ module.exports = (app) ->
 
   Data.reset = ->
     for key, event of events
-      app.redis.pubsub.unsubscribe(key)
+      app.redis.pubsub.unsubscribe(buildKey(key))
       delete events[key]
     globalEventEmitter.removeAllListeners()
 

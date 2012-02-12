@@ -32,7 +32,7 @@ $:.unshift(File.expand_path('./lib', ENV['rvm_path'])) # Add RVM's lib directory
 require "rvm/capistrano"                  # Load RVM's capistrano plugin.
 
 set :forever_start do
-  "cd #{current_path} && NODE_ENV=production forever start app.js -p #{app_port} -m #{mqtt_port}"
+  "cd #{current_path} && NODE_ENV=production forever start mqtt-rest.js -p #{app_port} -m #{mqtt_port}"
 end
 
 namespace :deploy do

@@ -1,5 +1,5 @@
 #! /usr/bin/env node
 
 require('coffee-script')
-app = require("./app.coffee")
+app = require("./mqtt-rest.coffee")
 app.start()

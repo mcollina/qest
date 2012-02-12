@@ -41,7 +41,7 @@ namespace :deploy do
   end
 
   task :stop do 
-    run "cd #{current_path} && forever stop app.js"
+    run "cd #{current_path} && forever stop mqtt-rest.js"
   end
 
   task :restart, :roles => :app, :except => { :no_release => true } do

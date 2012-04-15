@@ -2,6 +2,7 @@
 EventEmitter = require('events').EventEmitter
 
 globalEventEmitter = new EventEmitter()
+globalEventEmitter.setMaxListeners(0)
 events = {}
 
 KEYS_SET_NAME = 'topics'
@@ -11,6 +12,7 @@ module.exports = (app) ->
   getEventEmitter = (key) ->
     unless events[key]?
       events[key] = new EventEmitter()
+      events[key].setMaxListeners(0)
       app.redis.pubsub.subscribe(key)
 
     events[key]

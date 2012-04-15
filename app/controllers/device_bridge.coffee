@@ -87,6 +87,12 @@ module.exports = (app) ->
     listeners = {}
     globalListener = null
 
+    unsubscribe_all = ->
+      Data.removeListener('newData', globalListener) if globalListener?
+      for topic, listener of listeners
+        Data.find topic, (data) ->
+          data.removeListener('change', listener)
+
     client.on 'connect', (packet) ->
       client.id = packet.client
       client.connack(returnCode: 0)
@@ -107,7 +113,10 @@ module.exports = (app) ->
       addListener = (data) ->
 
         listener = (currentData) ->
-          client.publish(topic: currentData.getKey(), payload: currentData.getValue())
+          try
+            client.publish(topic: currentData.getKey(), payload: currentData.getValue())
+          catch error
+            unsubscribe_all()
 
         data.on 'change', listener
 
@@ -137,13 +146,9 @@ module.exports = (app) ->
 
     client.on 'error', (error) ->
       client.stream.end()
-      console.log(e)
 
    	client.on 'close', (err) ->
-      Data.removeListener('newData', globalListener) if globalListener?
-      for topic, listener of listeners
-        Data.find topic, (data) ->
-          data.removeListener('change', listener)
+      unsubscribe_all()
 
   return { 
     start: (port) ->

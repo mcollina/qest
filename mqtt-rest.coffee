@@ -29,7 +29,8 @@ module.exports.configure = configure = ->
     app.use(express.bodyParser())
     app.use(express.methodOverride())
     app.use(connect.cookieParser())
-    app.use(connect.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", store: new RedisStore()))
+    app.use(connect.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
+      store: new RedisStore(), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
     app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
     app.use(app.router)
     app.use(express.static(__dirname + '/public'))

@@ -1,12 +1,11 @@
 #! /usr/bin/env coffee
 
 Pool = require("./mqtt_client_pool").Pool
-listen = require './listen_mqtt'
 mqtt_port = 1883
 
 Benchmark = require 'benchmark'
 
-pool = new Pool("127.0.0.1", 1883)
+pool = new Pool("127.0.0.1", mqtt_port)
 
 suite = new Benchmark.Suite
 
@@ -59,11 +58,11 @@ setup_listeners = (suite, number) ->
   , defer: true)
   suite
 
-# setup_listeners(suite, 1)
-# setup_listeners(suite, 10)
-# setup_listeners(suite, 100)
+setup_listeners(suite, 1)
+setup_listeners(suite, 10)
+setup_listeners(suite, 100)
 setup_listeners(suite, 1000)
-# setup_listeners(suite, 10000)
+setup_listeners(suite, 10000)
 
 suite.on('cycle', (event) ->
   console.log(event.target.name)

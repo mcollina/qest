@@ -95,6 +95,7 @@ module.exports = (app) ->
 
     client.on 'connect', (packet) ->
       client.id = packet.client
+      console.log "Connected MQTT client #{client.id}"
       client.connack(returnCode: 0)
 
     client.on 'subscribe', (packet) ->
@@ -116,6 +117,7 @@ module.exports = (app) ->
           try
             client.publish(topic: currentData.getKey(), payload: currentData.getValue())
           catch error
+            console.log error
             unsubscribe_all()
 
         data.on 'change', listener
@@ -145,6 +147,7 @@ module.exports = (app) ->
       client.stream.end()
 
     client.on 'error', (error) ->
+      console.log error
       client.stream.end()
 
    	client.on 'close', (err) ->

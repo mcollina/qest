@@ -1,11 +1,15 @@
 #! /usr/bin/env coffee
 
+request = require("request")
 Pool = require("./mqtt_client_pool").Pool
+
+host = "localhost"
 mqtt_port = 1883
+http_port = 3000
 
 Benchmark = require 'benchmark'
 
-pool = new Pool("127.0.0.1", mqtt_port)
+pool = new Pool(host, mqtt_port)
 
 suite = new Benchmark.Suite
 
@@ -13,7 +17,7 @@ payload = 0
 
 setup_listeners = (suite, number) ->
   suite.add("#{number} Client", (d) ->
-    payload = 1
+    payload += 1
     publish_count = 0
     subscribed_count = 0
     topic = "bench/#{number}"
@@ -49,12 +53,7 @@ setup_listeners = (suite, number) ->
           
           # if we completed the subscriptions
           if subscribed_count == number
-            for count in [0...10]
-              pool.do (pub_client) -> 
-                # we publish a new value on the queue
-                # we do it ten times, so if one it's rejected
-                # it's not a problem
-                pub_client.publish topic: "bench/#{number}", payload: String(payload)
+            request.post url: "http://#{host}:#{port}/topics/#{topic}", json: { payload: payload }
 
   , defer: true)
   suite
@@ -63,8 +62,8 @@ setup_listeners = (suite, number) ->
 # setup_listeners(suite, 1)
 # setup_listeners(suite, 10)
 # setup_listeners(suite, 100)
-setup_listeners(suite, 700)
-# setup_listeners(suite, 10000)
+# setup_listeners(suite, 1000)
+setup_listeners(suite, 10000)
 
 suite.on('cycle', (event) ->
   console.log(event.target.name)
@@ -77,7 +76,7 @@ suite.on('cycle', (event) ->
 
 clients = []
 total = 0
-preload_connections = 700
+preload_connections = 15000
 load_cycle = 100
 launched = false
 
@@ -88,7 +87,7 @@ create = ->
       clients.push(client)
       if total % load_cycle == 0
         if total < preload_connections
-          setTimeout(create, 500)
+          setTimeout(create, 200)
         else if not launched
           launched = true
           console.log "connection pool populated"

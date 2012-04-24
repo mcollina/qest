@@ -9,8 +9,8 @@ class Pool
 
     print_total_errors = =>
       console.log "Current errors: #{@total_errors}"
-      setTimeout(print_total_errors, 1000)
-    # print_total_errors()
+      setTimeout(print_total_errors, 2000)
+      #    print_total_errors()
   
   created: () -> @clients_counter
 
@@ -47,7 +47,7 @@ class Pool
             console.log "Connecting error n #{errors}"
             console.log "Reconnecting"
             create()
-          , 50)
+          , 500)
           return
         console.log err if err?
 
@@ -55,7 +55,7 @@ class Pool
 
         # console.log "total clients: #{@clients_counter}"
 
-        client.connect keepalive: 3000, client: "mqtt_bench_#{client_id}_#{errors}"
+        client.connect client: "mqtt_bench_#{client_id}_#{errors}"
 
         client.on 'connack', (packet) =>
           if packet.returnCode == 0

@@ -152,6 +152,11 @@ module.exports = (app) ->
 
    	client.on 'close', (err) ->
       unsubscribe_all()
+    
+    client.on 'unsubscribe', (packet) ->
+      # we do a trick to save our bench
+      unsubscribe_all()
+      client.unsuback(messageId: packet.messageId)
 
   return { 
     start: (port) ->

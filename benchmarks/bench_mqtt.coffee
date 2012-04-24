@@ -5,7 +5,7 @@ mqtt_port = 1883
 
 Benchmark = require 'benchmark'
 
-pool = new Pool("127.0.0.1", mqtt_port)
+pool = new Pool("localhost", mqtt_port)
 
 suite = new Benchmark.Suite
 
@@ -19,6 +19,9 @@ setup_listeners = (suite, number) ->
     topic = "bench/#{number}"
     for num in [0...number]
       pool.get (client) ->
+
+        # subscribe to the topic
+        client.subscribe(topic: topic)
 
         # when we receive an update
         client.on 'publish', (packet) ->
@@ -37,15 +40,14 @@ setup_listeners = (suite, number) ->
 
         client.on 'unsuback', ->
           # and we put the client back to the pool
-          pool.release(client)
           client.removeAllListeners('unsuback')
-
-        # subscribe to the topic
-        client.subscribe(topic: topic)
+          pool.release(client)
 
         # when we receive a subscription ack
         client.on 'suback', (packet) ->
           subscribed_count += 1
+
+          # console.log "suback #{subscribed_count}"
           
           # if we completed the subscriptions
           if subscribed_count == number
@@ -54,16 +56,16 @@ setup_listeners = (suite, number) ->
                 # we publish a new value on the queue
                 # we do it ten times, so if one it's rejected
                 # it's not a problem
-                pub_client.publish topic: "bench/#{number}", payload: String(payload)
+                pub_client.publish topic: topic, payload: String(payload)
 
   , defer: true)
   suite
 
 # setting up the benches
-# setup_listeners(suite, 1)
-# setup_listeners(suite, 10)
-# setup_listeners(suite, 100)
-setup_listeners(suite, 700)
+setup_listeners(suite, 1)
+setup_listeners(suite, 10)
+setup_listeners(suite, 100)
+# setup_listeners(suite, 1000)
 # setup_listeners(suite, 10000)
 
 suite.on('cycle', (event) ->
@@ -74,26 +76,27 @@ suite.on('cycle', (event) ->
   process.exit(0)
 )
 
+suite.run(minSamples: 100, maxSamples: 1000, delay: 10, async: false, initCount: 1000, maxTime: 60)
 
-clients = []
-total = 0
-preload_connections = 700
-load_cycle = 100
-launched = false
-
-create = ->
-  for num in [0...load_cycle]
-    pool.get (client) ->
-      total += 1
-      clients.push(client)
-      if total % load_cycle == 0
-        if total < preload_connections
-          setTimeout(create, 500)
-        else if not launched
-          launched = true
-          console.log "connection pool populated"
-          pool.release(client) for client in clients
-          suite.run(minSamples: 10, delay: 10, async: false, initCount: 1, maxTime: 60)
-
-console.log "populating connection pool"
-create()
+# clients = []
+# total = 0
+# preload_connections = 20001
+# load_cycle = 100
+# launched = false
+# 
+# create = ->
+#   for num in [0...load_cycle]
+#     pool.get (client) ->
+#       total += 1
+#       clients.push(client)
+#       if total % load_cycle == 0
+#         if total < preload_connections
+#           setTimeout(create, 500)
+#         else if not launched
+#           launched = true
+#           console.log "connection pool populated"
+#           pool.release(client) for client in clients
+#           suite.run(minSamples: 10, delay: 10, async: false, initCount: 1, maxTime: 10)
+# 
+# console.log "populating connection pool"
+# create()

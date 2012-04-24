@@ -9,8 +9,8 @@ module.exports = (app) ->
   publish_payload = (topic, payload) ->
     Data.findOrCreate topic, payload
 
-  app.get '/topics/:topic', (req, res) ->
-    topic = req.params.topic
+  app.get /^\/topics\/(.+)$/, (req, res) ->
+    topic = req.params[0]
 
     topics = req.session.topics || []
     index = topics.indexOf(topic)
@@ -37,8 +37,9 @@ module.exports = (app) ->
       else
         res.render 'topic.hbs', topic: req.params.topic
 
-  app.put '/topics/:topic', (req, res) ->
-    publish_payload(req.params.topic, req.body.payload)
+  app.put /^\/topics\/(.+)$/, (req, res) ->
+    topic = req.params[0]
+    publish_payload(topic, req.body.payload)
     res.send 204
 
   # setup websockets
@@ -107,7 +108,7 @@ module.exports = (app) ->
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
         subscriptions.push(reg)
-        granted.push subscription
+        granted.push 0
 
       client.suback(messageId: packet.messageId, granted: granted)
 

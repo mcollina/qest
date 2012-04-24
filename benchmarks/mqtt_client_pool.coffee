@@ -44,18 +44,17 @@ class Pool
             if errors == 10
               console.log "Impossible to connect to the server"
               process.exit(1)
-            console.log "Connecting error n #{errors}"
-            console.log "Reconnecting"
+              # console.log "Connecting error n #{errors}"
+              # console.log "Reconnecting"
             create()
-          , 500)
+          , 100)
           return
-        console.log err if err?
 
         # console.log "created #{@clients_counter} with errors #{errors}" if errors > 0
 
         # console.log "total clients: #{@clients_counter}"
 
-        client.connect client: "mqtt_bench_#{client_id}_#{errors}"
+        client.connect client: "mqtt_bench_#{client_id}_#{errors}", keepalive: 500
 
         client.on 'connack', (packet) =>
           if packet.returnCode == 0

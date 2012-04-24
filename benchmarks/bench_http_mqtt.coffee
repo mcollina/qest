@@ -53,7 +53,7 @@ setup_listeners = (suite, number) ->
           
           # if we completed the subscriptions
           if subscribed_count == number
-            request.post url: "http://#{host}:#{port}/topics/#{topic}", json: { payload: payload }
+            request.put url: "http://#{host}:#{http_port}/topics/#{topic}", json: { payload: payload }
 
   , defer: true)
   suite
@@ -61,9 +61,9 @@ setup_listeners = (suite, number) ->
 # setting up the benches
 # setup_listeners(suite, 1)
 # setup_listeners(suite, 10)
-# setup_listeners(suite, 100)
+setup_listeners(suite, 100)
 # setup_listeners(suite, 1000)
-setup_listeners(suite, 10000)
+# setup_listeners(suite, 10000)
 
 suite.on('cycle', (event) ->
   console.log(event.target.name)
@@ -74,25 +74,27 @@ suite.on('cycle', (event) ->
 )
 
 
-clients = []
-total = 0
-preload_connections = 15000
-load_cycle = 100
-launched = false
+suite.run(minSamples: 10, delay: 10, async: false, initCount: 1, maxTime: 60)
 
-create = ->
-  for num in [0...load_cycle]
-    pool.get (client) ->
-      total += 1
-      clients.push(client)
-      if total % load_cycle == 0
-        if total < preload_connections
-          setTimeout(create, 200)
-        else if not launched
-          launched = true
-          console.log "connection pool populated"
-          pool.release(client) for client in clients
-          suite.run(minSamples: 10, delay: 10, async: false, initCount: 1, maxTime: 60)
-
-console.log "populating connection pool"
-create()
+# clients = []
+# total = 0
+# preload_connections = 15100
+# load_cycle = 100
+# launched = false
+# 
+# create = ->
+#   for num in [0...load_cycle]
+#     pool.get (client) ->
+#       total += 1
+#       clients.push(client)
+#       if total % load_cycle == 0
+#         if total < preload_connections
+#           setTimeout(create, 500)
+#         else if not launched
+#           launched = true
+#           console.log "connection pool populated"
+#           pool.release(client) for client in clients
+#           suite.run(minSamples: 10, delay: 10, async: false, initCount: 1, maxTime: 60)
+# 
+# console.log "populating connection pool"
+# create()

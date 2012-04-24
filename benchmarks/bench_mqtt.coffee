@@ -65,7 +65,7 @@ setup_listeners = (suite, number) ->
 setup_listeners(suite, 1)
 setup_listeners(suite, 10)
 setup_listeners(suite, 100)
-# setup_listeners(suite, 1000)
+setup_listeners(suite, 1000)
 # setup_listeners(suite, 10000)
 
 suite.on('cycle', (event) ->

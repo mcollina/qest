@@ -119,7 +119,7 @@ module.exports = (app) ->
             client.publish(topic: currentData.getKey(), payload: currentData.getValue())
           catch error
             console.log error
-            unsubscribe_all()
+            client.close()
 
         data.on 'change', listener
 

@@ -81,8 +81,8 @@ describe "Data", ->
       models.Data.find /hello .*/, (data, err) ->
         results.push(data.getKey()) unless err?
         if results.length == 2
-          expect(results).toContain("hello bob")
-          expect(results).toContain("hello mark")
+          expect(results).to.contain("hello bob")
+          expect(results).to.contain("hello mark")
           done()
 
     createdBob = false

@@ -1,5 +1,5 @@
 
-env = require("../mqtt-rest.coffee")
+env = require("../qest.coffee")
 
 module.exports.globalSetup = ->
   return if @app?

@@ -9,7 +9,6 @@ fs = require 'fs'
 hbs = require 'hbs'
 redis = require 'redis'
 EventEmitter = require('events').EventEmitter
-connect = require 'connect'
 cless = require 'connect-less'
 RedisStore = require('connect-redis')(express)
 
@@ -26,11 +25,11 @@ module.exports.configure = configure = ->
   app.configure -> 
     app.set('views', __dirname + '/app/views')
     app.set('view engine', 'hbs')
-    app.use(connect.logger())
+    app.use(express.logger())
     app.use(express.bodyParser())
     app.use(express.methodOverride())
-    app.use(connect.cookieParser())
-    app.use(connect.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
+    app.use(express.cookieParser())
+    app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
       store: new RedisStore(), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
     app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
     app.use(app.router)

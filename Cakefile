@@ -3,20 +3,18 @@ child_process = require('child_process')
 process = global.process
 path = require('path')
 
-run_external = (command, args=[], callback) ->
-  console.log("Running #{command} #{args.join(" ")}")
-  child = child_process.spawn(command, args)
+runExternal = (command, callback) ->
+  console.log("Running #{command}")
+  child = child_process.spawn("/bin/sh", ["-c", command])
   child.stdout.on "data", (data) -> process.stdout.write(data)
   child.stderr.on "data", (data) -> process.stderr.write(data)
   child.on('exit', callback) if callback?
 
 launchSpec = (args...) ->
-  child_process.exec 'find test -iname \'*spec.coffee\'', (err, stdout, stderr) ->
-    files = stdout.trim().split("\n")
-    run_external "./node_modules/.bin/mocha", args.concat(files)
+  runExternal "NODE_ENV=test ./node_modules/.bin/mocha --compilers coffee:coffee-script " + args.join(" ")
 
 task "spec", ->
-  launchSpec()
+  launchSpec("--recursive test")
 
 task "spec:ci", ->
   launchSpec("--watch")

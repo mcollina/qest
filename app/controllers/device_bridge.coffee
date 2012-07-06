@@ -8,8 +8,8 @@ module.exports = (app) ->
   publish_payload = (topic, payload) ->
     Data.findOrCreate topic, payload
 
-  app.get '/topics/:topic', (req, res) ->
-    topic = req.params.topic
+  app.get (/^\/topics\/(.+)$/), (req, res) ->
+    topic = req.params[0]
 
     topics = req.session.topics || []
     index = topics.indexOf(topic)
@@ -22,7 +22,7 @@ module.exports = (app) ->
 
     Data.find topic, (data, err) ->
       if req.accepts 'html'
-        res.render 'topic.hbs', topic: req.params.topic
+        res.render 'topic.hbs', topic: topic
       else if req.accepts 'json'
         res.contentType('json')
         try
@@ -42,8 +42,9 @@ module.exports = (app) ->
           res.send value
 
 
-  app.put '/topics/:topic', (req, res) ->
-    publish_payload(req.params.topic, req.body.payload)
+  app.put /^\/topics\/(.+)$/, (req, res) ->
+    topic = req.params[0]
+    publish_payload(topic, req.body.payload)
     res.send 204
 
 
@@ -52,6 +53,7 @@ module.exports = (app) ->
     subscriptions = {}
 
     socket.on 'subscribe', (topic) ->
+      console.log topic
 
       Data.findOrCreate topic, (data) ->
 
@@ -95,7 +97,7 @@ module.exports = (app) ->
         # + is 'match anything but a / until you hit a /' */
         reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
         subscriptions.push(reg)
-        granted.push subscription
+        granted.push 0
 
       client.suback(messageId: packet.messageId, granted: granted)
 
@@ -106,7 +108,7 @@ module.exports = (app) ->
             client.publish(topic: currentData.getKey(), payload: currentData.getValue())
           catch error
             console.log error
-            unsubscribe_all()
+            client.close()
 
         data.on 'change', listener
 

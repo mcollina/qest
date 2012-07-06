@@ -12,9 +12,11 @@ EventEmitter = require('events').EventEmitter
 connect = require 'connect'
 cless = require 'connect-less'
 RedisStore = require('connect-redis')(express)
+
 # Create Server
 
 module.exports.app = app = express.createServer()
+http = require('http').createServer(app)
 
 # Configuration
 
@@ -22,7 +24,6 @@ app.redis = {}
 
 module.exports.configure = configure = ->
   app.configure -> 
-    app.register('.hbs', hbs)
     app.set('views', __dirname + '/app/views')
     app.set('view engine', 'hbs')
     app.use(connect.logger())
@@ -41,6 +42,24 @@ module.exports.configure = configure = ->
   app.configure 'production', ->
     app.use(express.errorHandler())
 
+  # setup websockets
+  io = app.io = require('socket.io').listen(http)
+
+  io.configure 'production', ->
+    io.enable('browser client minification');  # send minified client
+    io.enable('browser client etag');          # apply etag caching logic based on version number
+    io.enable('browser client gzip');          # gzip the file
+    io.set('log level', 1)
+
+    io.set('transports', [
+      'htmlfile'
+    , 'xhr-polling'
+    , 'jsonp-polling'
+    ])
+
+  io.configure 'development', ->
+    io.set('transports', ['websocket'])
+
   # Helpers
   helpersPath = __dirname + "/app/helpers/"
   for helper in fs.readdirSync(helpersPath)
@@ -48,7 +67,6 @@ module.exports.configure = configure = ->
 
   load("models")
   load("controllers")
-
 
 # load mqtt
 app.mqtt = require("mqttjs")
@@ -117,7 +135,7 @@ start = module.exports.start = (opts={}) ->
   setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   configure()
 
-  app.listen(opts.port)
+  http.listen(opts.port)
   app.controllers.device_bridge.start(opts.mqtt)
   console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
   console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)

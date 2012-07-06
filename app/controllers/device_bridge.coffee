@@ -1,9 +1,8 @@
 
 mqtt = null
 
-io = null # this will be defined in the start method
-
 module.exports = (app) ->
+  io = app.io
   Data = app.models.Data
 
   publish_payload = (topic, payload) ->
@@ -22,7 +21,9 @@ module.exports = (app) ->
     req.session.topics = topics
 
     Data.find topic, (data, err) ->
-      if req.accepts 'json'
+      if req.accepts 'html'
+        res.render 'topic.hbs', topic: req.params.topic
+      else if req.accepts 'json'
         res.contentType('json')
         try
           # if it's a json, we parse it and render
@@ -31,33 +32,20 @@ module.exports = (app) ->
           # else we transform it in string
           value = "" + data.getValue()
         if err?
-          res.json null, 404
+          res.send 404
         else
           res.json value
       else
-        res.render 'topic.hbs', topic: req.params.topic
+        if err?
+          res.send "", 404
+        else
+          res.send value
+
 
   app.put '/topics/:topic', (req, res) ->
     publish_payload(req.params.topic, req.body.payload)
     res.send 204
 
-  # setup websockets
-  io = require('socket.io').listen(app)
-
-  io.configure 'production', ->
-    io.enable('browser client minification');  # send minified client
-    io.enable('browser client etag');          # apply etag caching logic based on version number
-    io.enable('browser client gzip');          # gzip the file
-    io.set('log level', 1)
-
-    io.set('transports', [
-      'htmlfile'
-    , 'xhr-polling'
-    , 'jsonp-polling'
-    ])
-
-  io.configure 'development', ->
-    io.set('transports', ['websocket'])
 
   io.sockets.on 'connection', (socket) ->
 

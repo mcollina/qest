@@ -1,5 +1,5 @@
 set :application, "mqtt-rest"
-set :repository,  "gitolite@repo.matteocollina.com:mqtt-rest"
+set :repository,  "git@bitbucket.org:mcollina/qest.git"
 
 #set :scm, :subversion
 set :scm, :git
@@ -32,7 +32,7 @@ $:.unshift(File.expand_path('./lib', ENV['rvm_path'])) # Add RVM's lib directory
 require "rvm/capistrano"                  # Load RVM's capistrano plugin.
 
 set :forever_start do
-  "cd #{current_path} && NODE_ENV=production forever start mqtt-rest.js -p #{app_port} -m #{mqtt_port}"
+  "cd #{current_path} && NODE_ENV=production forever start qest.js -p #{app_port} -m #{mqtt_port}"
 end
 
 namespace :deploy do

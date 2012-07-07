@@ -39,7 +39,7 @@ module.exports = (app) ->
         if err?
           res.send "", 404
         else
-          res.send value
+          res.send "" + data.getValue()
 
 
   app.put /^\/topics\/(.+)$/, (req, res) ->

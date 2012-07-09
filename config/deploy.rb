@@ -1,5 +1,6 @@
 set :application, "mqtt-rest"
 set :repository,  "git@bitbucket.org:mcollina/qest.git"
+set :branch, "master"
 
 #set :scm, :subversion
 set :scm, :git

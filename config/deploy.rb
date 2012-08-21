@@ -27,15 +27,24 @@ set :rvm_type, :system                    # we have rvm installed by root
 set :rvm_ruby_string, 'ruby-1.9.3-p194@qest'
 
 namespace :foreman do
+  desc "Create Procfile"
+  task :create_procfile, :roles => :app do
+    procfile = ERB.new <<-EOF
+web: ./qest.js -p <%= app_port %> -m <%= mqtt_port %>
+    EOF
+ 
+    put procfile.result(binding), "#{release_path}/Procfile"
+  end
+
   desc "Export the Procfile to Ubuntu's upstart scripts"
   task :export, :roles => :app do
     # Hack to have capistrano enter the sudo password (for rvmsudo later)
     sudo "whoami"
-    run "rvm rvmrc trust #{release_path}"
-    run "cd #{release_path} && rvmsudo foreman export upstart /etc/init -a #{application} -u #{running_user} -l #{release_path}/log"
+    run "rvmsudo foreman export upstart /etc/init -a #{application} -u #{running_user} -l #{release_path}/log -d #{release_path} -f #{release_path}/Procfile"
   end
 end
 
+after "deploy:update", "foreman:create_procfile"
 after "deploy:update", "foreman:export"
 
 namespace :deploy do
@@ -61,3 +70,5 @@ namespace :dependencies do
     run "cd #{release_path} && npm install"
   end
 end
+
+after "deploy:update", "dependencies:install"

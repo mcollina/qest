@@ -10,7 +10,7 @@ require 'capistrano/ext/multistage'
 set :scm, :git
 # Or: `accurev`, `bzr`, `cvs`, `darcs`, `git`, `mercurial`, `perforce`, `subversion` or `none`
 
-set :use_sudo, false
+set :use_sudo, true
 
 # support for github
 ssh_options[:forward_agent] = true
@@ -31,7 +31,7 @@ namespace :foreman do
     # Hack to have capistrano enter the sudo password (for rvmsudo later)
     sudo "whoami"
     run "rvm rvmrc trust #{release_path}"
-    run "cd #{release_path} && rvmsudo bundle exec foreman export upstart /etc/init -a #{application} -u #{user} -l #{release_path}/log"
+    run "cd #{release_path} && rvmsudo bundle exec foreman export upstart /etc/init -a #{application} -u #{running_user} -l #{release_path}/log"
   end
 end
 

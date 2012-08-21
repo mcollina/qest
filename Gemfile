@@ -3,6 +3,7 @@ source 'http://rubygems.org'
 # Deploy with Capistrano
 gem 'capistrano'
 gem 'capistrano-ext'
+gem 'rvm-capistrano'
 
-gem 'whenever', :require => false
-gem 'i18n'
+gem 'foreman', require: false
+gem 'vagrant', require: false

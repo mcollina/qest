@@ -24,6 +24,7 @@ set :normalize_asset_timestamps, false
 
 require "rvm/capistrano"                  # Load RVM's capistrano plugin.
 set :rvm_type, :system                    # we have rvm installed by root
+set :rvm_ruby_string, 'ruby-1.9.3-p194@qest'
 
 namespace :foreman do
   desc "Export the Procfile to Ubuntu's upstart scripts"
@@ -31,7 +32,7 @@ namespace :foreman do
     # Hack to have capistrano enter the sudo password (for rvmsudo later)
     sudo "whoami"
     run "rvm rvmrc trust #{release_path}"
-    run "cd #{release_path} && rvmsudo bundle exec foreman export upstart /etc/init -a #{application} -u #{running_user} -l #{release_path}/log"
+    run "cd #{release_path} && rvmsudo foreman export upstart /etc/init -a #{application} -u #{running_user} -l #{release_path}/log"
   end
 end
 

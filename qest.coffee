@@ -14,7 +14,7 @@ RedisStore = require('connect-redis')(express)
 
 # Create Server
 
-module.exports.app = app = express.createServer()
+module.exports.app = app = express()
 http = require('http').createServer(app)
 
 # Configuration
@@ -25,7 +25,6 @@ module.exports.configure = configure = ->
   app.configure -> 
     app.set('views', __dirname + '/app/views')
     app.set('view engine', 'hbs')
-    app.use(express.logger())
     app.use(express.bodyParser())
     app.use(express.methodOverride())
     app.use(express.cookieParser())
@@ -36,9 +35,11 @@ module.exports.configure = configure = ->
     app.use(express.static(__dirname + '/public'))
 
   app.configure 'development', ->
+    app.use(express.logger())
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
 
   app.configure 'production', ->
+    app.use(express.logger())
     app.use(express.errorHandler())
 
   # setup websockets
@@ -58,6 +59,9 @@ module.exports.configure = configure = ->
 
   io.configure 'development', ->
     io.set('transports', ['websocket'])
+
+  io.configure 'test', ->
+    io.set('log level', 0)
 
   # Helpers
   helpersPath = __dirname + "/app/helpers/"
@@ -83,6 +87,13 @@ load = (key) ->
 
 hbs.registerHelper 'json', (context) -> 
   new hbs.SafeString(JSON.stringify(context))
+
+hbs.registerHelper 'notest', (options) -> 
+  if process.env.NODE_ENV != "test"
+    input = options.fn(@)
+    return input
+  else
+    return ""
 
 hbs.registerHelper 'markdown', (options) ->
   input = options.fn(@)
@@ -119,7 +130,7 @@ module.exports.setupRedis = setupRedis = (opts = {}) ->
   app.redis.client = redis.createClient(args...)
   app.redis.client.select(opts.db || 0)
 
-start = module.exports.start = (opts={}) ->
+start = module.exports.start = (opts={}, cb=->) ->
 
   opts.port ||= argv.port
   opts.mqtt ||= argv.mqtt
@@ -134,10 +145,19 @@ start = module.exports.start = (opts={}) ->
   setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   configure()
 
-  http.listen(opts.port)
-  app.controllers.device_bridge.start(opts.mqtt)
-  console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
-  console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
+  countDone = 0
+  done = ->
+    cb() if countDone++ == 2
+
+  http.listen opts.port, ->
+    console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
+    done()
+
+  app.controllers.device_bridge.start opts.mqtt, ->
+    console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
+    done()
+
+  app
 
 if require.main.filename == __filename
   start()

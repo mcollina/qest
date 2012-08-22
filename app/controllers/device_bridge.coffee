@@ -149,6 +149,6 @@ module.exports = (app) ->
       client.unsuback(messageId: packet.messageId)
 
   return { 
-    start: (port) ->
-      mqtt.listen(port)
+    start: (port, callback=->) ->
+      mqtt.listen(port, callback)
   }

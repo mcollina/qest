@@ -18,3 +18,13 @@ task "spec", ->
 
 task "spec:ci", ->
   launchSpec("--watch")
+
+task "features", ->
+  runExternal "NODE_ENV=test ./node_modules/.bin/cucumber.js -t ~@wip", (result) ->
+    if result != 0
+      console.log "FAIL: scenarios should not fail"
+
+task "features:wip", ->
+  runExternal "NODE_ENV=test ./node_modules/.bin/cucumber.js -t @wip", (result) ->
+    if result == 0
+      console.log "FAIL: wip scenarios should fail"

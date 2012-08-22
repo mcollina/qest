@@ -74,7 +74,7 @@ describe "Data", ->
       done()
       expect(err).to.eql("Record not found")
 
-  it "should provide a find method that uses a regexp for matching", ->
+  it "should provide a find method that uses a regexp for matching", (done) ->
 
     results = []
     waited = ->

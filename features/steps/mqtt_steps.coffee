@@ -15,6 +15,6 @@ module.exports = ->
 
   @Then /^client "([^"]*)" should have received "([^"]*)" from "([^"]*)" via MQTT$/, (client, message, topic, callback) ->
     @getMQTTClient client, (client) ->
-      client.getLastMessageFromTopic topic, (packet) ->
-        expect(packet.payload).to.equal(message)
+      client.getLastMessageFromTopic topic, (lastMessage) ->
+        expect(lastMessage).to.equal(message)
         callback()

@@ -1,6 +1,5 @@
 env = require("../../qest.coffee")
 zombie = require('zombie')
-mqtt = require('mqttjs')
 
 opts = 
   port: 9777

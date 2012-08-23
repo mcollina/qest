@@ -7,7 +7,7 @@ class MqttClient
     @last_packets = {}
 
     @client.on 'publish', (packet) =>
-      @last_packets[packet.topic] = packet
+      @last_packets[packet.topic] = packet.payload
 
   subscribe: (topic) ->
     @client.subscribe(topic: topic)
@@ -26,7 +26,7 @@ class MqttClient
 
     listenToPublish = (packet) =>
       if packet.topic == topic
-        callback(packet)
+        callback(packet.payload)
         @client.removeListener(topic, listenToPublish)
 
     @client.on('publish', listenToPublish)

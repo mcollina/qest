@@ -13,13 +13,3 @@ module.exports = () ->
   @Then /^I should see the title "([^"]*)"$/, (text, callback) ->
     expect(@browser.text("title")).to.equal(text)
     callback()
-
-  @When /^client "([^"]*)" publishes "([^"]*)" to "([^"]*)" via HTTP$/, (client, message, topic, callback) ->
-    @getHTTPClient client, (client) ->
-      client.publish(topic, message, callback)
-
-  @Then /^client "([^"]*)" should see "([^"]*)" in "([^"]*)" via HTTP$/, (client, message, topic, callback) ->
-    @getHTTPClient client, (client) ->
-      client.getLastMessageFromTopic topic, (lastMessage) ->
-        expect(lastMessage).to.equal(message)
-        callback()

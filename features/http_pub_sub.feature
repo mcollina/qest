@@ -5,4 +5,4 @@ Feature: HTTP pub/sub
 
   Scenario: GETting and PUTting
     When client "B" publishes "hello world" to "foobar" via HTTP
-    Then client "A" should see "hello world" in "foobar" via HTTP
+    Then client "A" should have received "hello world" from "foobar" via HTTP

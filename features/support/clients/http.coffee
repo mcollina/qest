@@ -19,29 +19,7 @@ class HttpClient
   url: (topic) ->
     "http://#{@host}:#{@port}/topics/#{topic}"
 
+HttpClient.build = (opts, callback) ->
+  callback new HttpClient(opts.port, "127.0.0.1")
 
-module.exports = ->
-  @Before (done) ->
-
-    @buildHTTPClient = (callback) =>
-      callback new HttpClient(@opts.port, "127.0.0.1")
-
-    @httpClients = {}
-    @getHTTPClient = (name, callback) =>
-      if @httpClients[name]?
-        callback(@httpClients[name])
-      else
-        @buildHTTPClient (client) =>
-          @httpClients[name] = client
-          callback(client)
-    
-    done()
-
-  @After (done) ->
-    for name, client of @httpClients
-      client.disconnect()
-
-    @httpClients = {}
-
-    done()
-
+module.exports.HttpClient = HttpClient

@@ -22,3 +22,10 @@ Feature: MQTT pub/sub
     Given client "A" subscribe to "foo/#" via MQTT
     When client "B" publishes "hello world" to "foo/bar" via MQTT
     Then client "A" should have received "hello world" from "foo/bar" via MQTT
+
+  Scenario: Subscribe and publish 3 clients
+    Given client "A" subscribe to "foobar" via MQTT
+    And client "B" subscribe to "foobar" via MQTT
+    When client "C" publishes "hello world" to "foobar" via MQTT
+    Then client "A" should have received "hello world" from "foobar" via MQTT
+    Then client "B" should have received "hello world" from "foobar" via MQTT

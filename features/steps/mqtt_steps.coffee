@@ -3,15 +3,15 @@ expect = require('chai').expect
 module.exports = ->
   @World = require("../support/world").World
 
-  @Given /^I subscribe to "([^"]*)"$/, (topic, callback) ->
-    @subscribe(topic)
+  @Given /^I subscribe to "([^"]*)" via MQTT$/, (topic, callback) ->
+    @mqttSubscribe(topic)
     callback()
 
-  @When /^someone publishes "([^"]*)" to "([^"]*)"$/, (message, topic, callback) ->
-    @publish(topic, message)
+  @When /^someone publishes "([^"]*)" to "([^"]*)" via MQTT$/, (message, topic, callback) ->
+    @mqttPublish(topic, message)
     callback()
 
-  @Then /^I should have received "([^"]*)" from "([^"]*)"$/, (message, topic, callback) ->
-    @getLastMessageFromTopic topic, (packet) ->
+  @Then /^I should have received "([^"]*)" from "([^"]*)" via MQTT$/, (message, topic, callback) ->
+    @mqttGetLastMessageFromTopic topic, (packet) ->
       expect(packet.payload).to.equal(message)
       callback()

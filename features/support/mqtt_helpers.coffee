@@ -20,13 +20,13 @@ module.exports = ->
       client.on 'publish', (packet) =>
         last_packets[packet.topic] = packet
 
-      @subscribe = (topic) =>
+      @mqttSubscribe = (topic) =>
         client.subscribe(topic: topic)
 
-      @publish = (topic, message) =>
+      @mqttPublish = (topic, message) =>
         client.publish(topic: topic, payload: message)
 
-      @getLastMessageFromTopic = (topic, callback) =>
+      @mqttGetLastMessageFromTopic = (topic, callback) =>
         last_packet = last_packets[topic]
         if last_packet?
           callback(last_packet)

@@ -13,7 +13,6 @@ module.exports = (app) ->
 
     topics = req.session.topics || []
     index = topics.indexOf(topic)
-    console.log index
     if index >= 0
       topics = [].concat(topics.splice(0, index), topics.splice(index + 1, req.session.topics.length))
     topics.push(topic)
@@ -53,7 +52,6 @@ module.exports = (app) ->
     subscriptions = {}
 
     socket.on 'subscribe', (topic) ->
-      console.log topic
 
       Data.findOrCreate topic, (data) ->
 
@@ -85,7 +83,6 @@ module.exports = (app) ->
 
     client.on 'connect', (packet) ->
       client.id = packet.client
-      console.log "Connected MQTT client #{client.id}"
       client.connack(returnCode: 0)
 
     client.on 'subscribe', (packet) ->

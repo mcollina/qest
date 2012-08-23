@@ -22,6 +22,12 @@ http = require('http').createServer(app)
 app.redis = {}
 
 module.exports.configure = configure = ->
+  app.configure 'development', ->
+    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
+
+  app.configure 'production', ->
+    app.use(express.errorHandler())
+
   app.configure -> 
     app.set('views', __dirname + '/app/views')
     app.set('view engine', 'hbs')
@@ -34,14 +40,6 @@ module.exports.configure = configure = ->
     app.use(app.router)
     app.use(express.static(__dirname + '/public'))
 
-  app.configure 'development', ->
-    app.use(express.logger())
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
-
-  app.configure 'production', ->
-    app.use(express.logger())
-    app.use(express.errorHandler())
-
   # setup websockets
   io = app.io = require('socket.io').listen(http)
 
@@ -49,7 +47,7 @@ module.exports.configure = configure = ->
     io.enable('browser client minification');  # send minified client
     io.enable('browser client etag');          # apply etag caching logic based on version number
     io.enable('browser client gzip');          # gzip the file
-    io.set('log level', 1)
+    io.set('log level', 0)
 
     io.set('transports', [
       'htmlfile'

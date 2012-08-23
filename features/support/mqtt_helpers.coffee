@@ -43,14 +43,12 @@ module.exports = ->
 
         client.on 'connack', (packet) ->
           if packet.returnCode == 0
-            done()
+            callback(new MqttClient(client))
           else
             console.log('connack error %d', packet.returnCode)
             throw new Error("connack error #{packet.returnCode}")
-        callback(new MqttClient(client))
 
     @mqttClients = {}
-
     @getMQTTClient = (name, callback) =>
       if @mqttClients[name]?
         callback(@mqttClients[name])
@@ -58,7 +56,7 @@ module.exports = ->
         @buildMQTTClient (client) =>
           @mqttClients[name] = client
           callback(client)
-
+    
     done()
 
   @After (done) ->

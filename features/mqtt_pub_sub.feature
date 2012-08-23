@@ -18,3 +18,7 @@ Feature: MQTT pub/sub
     When client "A" subscribe to "foobar" via MQTT
     Then client "A" should have received "aaa" from "foobar" via MQTT
 
+  Scenario: Subscribe and publish with pattern
+    Given client "A" subscribe to "foo/#" via MQTT
+    When client "B" publishes "hello world" to "foo/bar" via MQTT
+    Then client "A" should have received "hello world" from "foo/bar" via MQTT

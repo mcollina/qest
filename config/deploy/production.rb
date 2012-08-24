@@ -1,5 +1,5 @@
 
-ip = "callisto.matteocollina.com"
+ip = "metis.matteocollina.com"
 
 role :web, ip 
 role :app, ip
@@ -10,4 +10,4 @@ set :mqtt_port, 8001
 
 set :user, "deploy"
 
-set :branch, "master"
+set :branch, "himalia"

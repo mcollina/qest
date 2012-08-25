@@ -50,15 +50,6 @@ module.exports.configure = configure = ->
     io.enable('browser client gzip');          # gzip the file
     io.set('log level', 1)
 
-    io.set('transports', [
-      'htmlfile'
-    , 'xhr-polling'
-    , 'jsonp-polling'
-    ])
-
-  io.configure 'development', ->
-    io.set('transports', ['websocket'])
-
   # Helpers
   helpersPath = __dirname + "/app/helpers/"
   for helper in fs.readdirSync(helpersPath)

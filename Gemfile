@@ -6,4 +6,3 @@ gem 'capistrano-ext'
 gem 'rvm-capistrano'
 
 gem 'foreman', '~> 0.57.0', require: false
-gem 'vagrant', require: false

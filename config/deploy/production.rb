@@ -11,4 +11,4 @@ set :mqtt_port, 8883
 set :user, "matteo"
 set :running_user, "qest"
 
-set :branch, "himalia"
+set :branch, "master"

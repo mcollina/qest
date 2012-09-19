@@ -46,14 +46,13 @@ module.exports = (app) ->
     publish_payload(topic, req.body.payload)
     res.send 204
 
-
   io.sockets.on 'connection', (socket) ->
 
     subscriptions = {}
 
     socket.on 'subscribe', (topic) ->
 
-      Data.findOrCreate topic, (data) ->
+      Data.find topic, (data) ->
 
         subscription = (currentData) ->
           socket.emit("/topics/#{topic}", currentData.getValue())
@@ -67,7 +66,7 @@ module.exports = (app) ->
     socket.on 'disconnect', ->
 
       for topic, listener of subscriptions
-        Data.findOrCreate topic, (data) ->
+        Data.find topic, (data) ->
           data.removeListener('change', listener)
 
   mqtt = app.mqtt.createServer (client) ->

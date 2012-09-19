@@ -8,7 +8,7 @@
         <div id="payload-field" class="clearfix">
           <label for="payload">Content</label>
           <div class="input">
-            <textarea id="payload" name="payload" class="span8" rows="10" readonly></textarea>
+            <textarea id="payload" name="payload" class="span8" rows="10" readonly="true"></textarea>
             <span id="payload-error" class="help-inline hide">Impossible to parse as JSON</span>
           </div>
         </div>
@@ -31,7 +31,11 @@
 <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 <script type="text/javascript" src="/jsonlint.js"></script>
 <script type="text/javascript">
-  socket = io.connect()
+  var url = window.location.protocol + '//' + window.location.hostname;
+  if (window.location.port) {
+    url += ':' + window.location.port;
+  }
+  var socket = io.connect(url)
 
   var textarea = $("#payload");
   var textarea_error = $("#payload-error");
@@ -67,7 +71,7 @@
     socket.emit('subscribe', "{{topic}}");
   });
 
-socket.on("/topics/{{topic}}", function(data) {
+  socket.on("/topics/{{topic}}", function(data) {
     update_content(data);
   });
 
@@ -77,7 +81,7 @@ socket.on("/topics/{{topic}}", function(data) {
       try {
         val = JSON.stringify(jsonlint.parse(val));
       } catch(e) {
-        console.log(e);
+        //console.log(e);
         textarea.addClass("error");
         textarea_field.addClass("error");
         textarea_error.show();

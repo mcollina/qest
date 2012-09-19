@@ -49,6 +49,9 @@ module.exports.configure = configure = ->
     io.enable('browser client gzip');          # gzip the file
     io.set('log level', 0)
 
+  io.configure 'test', ->
+    io.set('log level', 0)
+
   # Helpers
   helpersPath = __dirname + "/app/helpers/"
   for helper in fs.readdirSync(helpersPath)

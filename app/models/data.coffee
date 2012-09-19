@@ -51,15 +51,16 @@ module.exports = (app) ->
       @
 
     save: (callback) ->
+      app.redis.client.set buildKey(@key), @value
 
-      app.redis.client.sismember KEYS_SET_NAME, @key, (err, result) =>
-        if result == 0
-          app.redis.client.publish("newData", @key)
-          app.redis.client.sadd(KEYS_SET_NAME, @key)
-        else
-          app.redis.client.publish(buildKey(@key), @value)
+      app.redis.client.sadd KEYS_SET_NAME, @key, (err, result) =>
 
-        app.redis.client.set buildKey(@key), @value, (=> callback(@) if callback?)
+        # if we have a new key, than we fire newData
+        app.redis.client.publish("newData", @key) if result == 1
+
+        app.redis.client.publish(buildKey(@key), @value)
+
+        callback(@) if callback?
 
       @
 

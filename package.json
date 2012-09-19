@@ -11,7 +11,7 @@
       , "optimist": "= 0.3.4"
       , "express": "= 3.0.0rc3"
       , "hbs": "= 1.0.4"
-      , "socket.io": "= 0.9.6"
+      , "socket.io": "= 0.9.10"
       , "less": "= 1.1.5"
       , "mqttjs": "= 0.1.7"
       , "redis": "= 0.7.1"

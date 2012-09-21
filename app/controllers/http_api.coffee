@@ -1,6 +1,4 @@
 
-mqtt = null
-
 module.exports = (app) ->
   io = app.io
   Data = app.models.Data
@@ -17,9 +15,11 @@ module.exports = (app) ->
     req.session.topics = topics
 
     Data.find topic, (data, err) ->
-      if req.accepts 'html'
+      type = req.accepts(['txt', 'json', 'html'])
+
+      if type == "html"
         res.render 'topic.hbs', topic: topic
-      else if req.accepts 'json'
+      else if type == 'json'
         res.contentType('json')
         try
           # if it's a json, we parse it and render
@@ -31,12 +31,13 @@ module.exports = (app) ->
           res.send 404
         else
           res.json value
-      else
+      else if type == 'txt'
         if err?
           res.send "", 404
         else
           res.send "" + data.getValue()
-
+      else
+        res.send "", 406
 
   app.put /^\/topics\/(.+)$/, (req, res) ->
     topic = req.params[0]

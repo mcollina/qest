@@ -9,7 +9,6 @@ fs = require 'fs'
 hbs = require 'hbs'
 redis = require 'redis'
 EventEmitter = require('events').EventEmitter
-cless = require 'connect-less'
 RedisStore = require('connect-redis')(express)
 
 # Create Server
@@ -36,9 +35,19 @@ module.exports.configure = configure = ->
     app.use(express.cookieParser())
     app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
       store: new RedisStore(), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
-    app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
+
+    helperContext = {}
+    app.use(require("connect-assets")(src: "app/assets", helperContext: helperContext, detectChanges: process.env.NODE_ENV != 'production' ))
+
     app.use(app.router)
     app.use(express.static(__dirname + '/public'))
+
+    for type in ["js", "css"]
+      (->
+        t = type
+        hbs.registerHelper t, (file) ->
+          new hbs.SafeString(helperContext[t](file))
+      )()
 
   # setup websockets
   io = app.io = require('socket.io').listen(http)

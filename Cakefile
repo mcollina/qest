@@ -17,7 +17,7 @@ task "spec", ->
   launchSpec("--recursive test")
 
 task "spec:ci", ->
-  launchSpec("--watch")
+  launchSpec("--watch --recursive test")
 
 task "features", ->
   runExternal "NODE_ENV=test ./node_modules/.bin/cucumber.js -t ~@wip", (result) ->

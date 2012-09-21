@@ -15,3 +15,9 @@ Feature: Web Interface
     Given I open the topic "mytopic"
     When client "A" publishes "hello world" to "mytopic" via HTTP
     Then I should see "hello world" in the textarea
+
+  Scenario: send the update of a topic from the web to the devices
+    Given client "A" subscribe to "mytopic" via MQTT
+    And I open the topic "mytopic"
+    When I change the payload to "hello world"
+    Then client "A" should have received "hello world" from "mytopic" via MQTT

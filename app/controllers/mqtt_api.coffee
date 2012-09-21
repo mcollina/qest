@@ -1,75 +1,8 @@
 
-mqtt = null
-
 module.exports = (app) ->
-  io = app.io
   Data = app.models.Data
 
-  publish_payload = (topic, payload) ->
-    Data.findOrCreate topic, payload
-
-  app.get (/^\/topics\/(.+)$/), (req, res) ->
-    topic = req.params[0]
-
-    topics = req.session.topics || []
-    index = topics.indexOf(topic)
-    if index >= 0
-      topics = [].concat(topics.splice(0, index), topics.splice(index + 1, req.session.topics.length))
-    topics.push(topic)
-    topics.pull() if topics.length > 5
-    req.session.topics = topics
-
-    Data.find topic, (data, err) ->
-      if req.accepts 'html'
-        res.render 'topic.hbs', topic: topic
-      else if req.accepts 'json'
-        res.contentType('json')
-        try
-          # if it's a json, we parse it and render
-          value = JSON.parse(data.getValue())
-        catch e
-          # else we transform it in string
-          value = "" + data.getValue()
-        if err?
-          res.send 404
-        else
-          res.json value
-      else
-        if err?
-          res.send "", 404
-        else
-          res.send "" + data.getValue()
-
-
-  app.put /^\/topics\/(.+)$/, (req, res) ->
-    topic = req.params[0]
-    publish_payload(topic, req.body.payload)
-    res.send 204
-
-  io.sockets.on 'connection', (socket) ->
-
-    subscriptions = {}
-
-    socket.on 'subscribe', (topic) ->
-
-      Data.find topic, (data) ->
-
-        subscription = (currentData) ->
-          socket.emit("/topics/#{topic}", currentData.getValue())
-
-        subscriptions[topic] = subscription
-
-        data.on('change', subscription)
-
-        subscription(data) if data.getValue()
-
-    socket.on 'disconnect', ->
-
-      for topic, listener of subscriptions
-        Data.find topic, (data) ->
-          data.removeListener('change', listener)
-
-  mqtt = app.mqtt.createServer (client) ->
+  (client) ->
 
     listeners = {}
     globalListener = null
@@ -124,7 +57,7 @@ module.exports = (app) ->
       Data.on 'newData', globalListener
 
     client.on 'publish', (packet) ->
-      publish_payload packet.topic, packet.payload
+      Data.findOrCreate packet.topic, packet.payload
 
     client.on 'pingreq', (packet) ->
 	    client.pingresp()
@@ -143,8 +76,3 @@ module.exports = (app) ->
       # we do a trick to save our bench
       unsubscribe_all()
       client.unsuback(messageId: packet.messageId)
-
-  return { 
-    start: (port, callback=->) ->
-      mqtt.listen(port, callback)
-  }

@@ -8,6 +8,7 @@ path = require 'path'
 fs = require 'fs'
 hbs = require 'hbs'
 redis = require 'redis'
+mqtt = require "mqttjs"
 EventEmitter = require('events').EventEmitter
 RedisStore = require('connect-redis')(express)
 
@@ -69,9 +70,6 @@ module.exports.configure = configure = ->
   load("models")
   load("controllers")
 
-# load mqtt
-app.mqtt = require("mqttjs")
-
 load = (key) ->
   app[key] = {}
   loadPath = __dirname + "/app/#{key}/"
@@ -79,7 +77,7 @@ load = (key) ->
     if component.match /(js|coffee)$/
       component = path.basename(component, path.extname(component))
       loadedModule = require(loadPath + component)(app)
-      component = loadedModule.name if loadedModule.name?
+      component = loadedModule.name if loadedModule.name? and loadedModule.name != ""
       app[key][component] = loadedModule
 
 
@@ -151,7 +149,7 @@ start = module.exports.start = (opts={}, cb=->) ->
     console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
     done()
 
-  app.controllers.device_bridge.start opts.mqtt, ->
+  mqtt.createServer(app.controllers.mqtt_api).listen opts.mqtt, ->
     console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
     done()
 
@@ -159,5 +157,3 @@ start = module.exports.start = (opts={}, cb=->) ->
 
 if require.main.filename == __filename
   start()
-
-

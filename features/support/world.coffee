@@ -9,7 +9,7 @@ opts =
   redisDB: 16
 
 app = env.start opts
-browser = new zombie.Browser(site: "http://localhost:#{opts.port}")
+browser = new zombie.Browser(site: "http://localhost:#{opts.port}", headers: { "Accept": "text/html" })
 
 exports.World = (callback) ->
   @browser = browser

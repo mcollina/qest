@@ -11,8 +11,11 @@ class HttpClient
     request.put(uri: @url(topic), form: { payload: message }, callback)
 
   getLastMessageFromTopic: (topic, callback) ->
-    request.get uri: @url(topic), headers: {"Accept": "text/plain"}, (err, response, body) ->
+    request.get uri: @url(topic), headers: @headers , (err, response, body) ->
       callback(body)
+
+  headers: () ->
+    {}
 
   disconnect: () ->
 

@@ -32,14 +32,16 @@ module.exports = (app) ->
 
   class Data
 
-    constructor: (@key, @value) ->
-      @value ||= null
+    constructor: (@key, val = null) ->
+      @setValue(val)
     
     getKey: () -> @key
 
     getValue: () -> @value
 
-    setValue: (val) -> @value = val
+    setValue: (val) ->
+      val = JSON.stringify(val) if val? and typeof val != 'string'
+      @value = val
 
     on: (event, callback) ->
       app.redis.pubsub.subscribe(buildKey(@key))

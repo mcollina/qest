@@ -1,8 +1,12 @@
 { MqttClient } = require("./clients/mqtt")
 { HttpClient } = require("./clients/http")
+{ HttpJsonClient } = require("./clients/http_json")
+{ HttpTxtClient } = require("./clients/http_txt")
 
 protocols = 
   HTTP: HttpClient
+  HTTP_JSON: HttpJsonClient
+  HTTP_TXT: HttpTxtClient
   MQTT: MqttClient
 
 module.exports = ->

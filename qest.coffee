@@ -35,7 +35,7 @@ module.exports.configure = configure = ->
     app.use(express.methodOverride())
     app.use(express.cookieParser())
     app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
-      store: new RedisStore(), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
+      store: new RedisStore(client: app.redis.client), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
 
     helperContext = {}
     app.use(require("connect-assets")(src: "app/assets", helperContext: helperContext, detectChanges: process.env.NODE_ENV != 'production' ))

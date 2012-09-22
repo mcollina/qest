@@ -41,5 +41,9 @@ module.exports = (app) ->
 
   app.put /^\/topics\/(.+)$/, (req, res) ->
     topic = req.params[0]
-    Data.findOrCreate(topic, req.body.payload)
+    if req.is("json")
+      payload = req.body
+    else
+      payload = req.body.payload
+    Data.findOrCreate(topic, payload)
     res.send 204

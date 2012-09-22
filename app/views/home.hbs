@@ -21,11 +21,11 @@ QEST is a stargate between the universe of devices which speak MQTT, and the uni
 speak HTTP.
 In this way you don't have to deal any custom protocol, you just GET and PUT the topic URI, like these:
 
-    $ curl -X PUT -d '{ "payload": 555 }' \
+    $ curl -X PUT -d '{ "hello": 555 }' \
     -H "Content-Type: application/json" \
     http://mqtt.matteocollina.com/topics/prova
     $ curl http://mqtt.matteocollina.com/topics/prova
-    555
+    { "hello": 555 }
 
 Let's build cool things with MQTT, REST and Arduino!
 

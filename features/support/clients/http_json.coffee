@@ -12,7 +12,7 @@ class HttpJsonClient
     request.put(
       uri: @url(topic), 
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload: message }),
+      body: JSON.stringify(message),
       callback)
 
   getLastMessageFromTopic: (topic, callback) ->

@@ -2,8 +2,8 @@
 <html>
 <head>
   <title>QEST</title>
-  <link rel='stylesheet' href='/stylesheets/main.css'>
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js">
+  {{css "main"}}
+  <script type="text/javascript" src="/jquery.min.js">
   </script>
   <!--[if lt IE 9]>
 	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -47,11 +47,13 @@
   _gaq.push(['_setDomainName', 'mqtt.matteocollina.com']);
   _gaq.push(['_trackPageview']);
 
+  {{#notest}}
   (function() {
     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
+  {{/notest}}
 
   </script>
 </body>

@@ -73,14 +73,15 @@ It's also an example with MQTT-REST.
 Let's build your own!
 {{/markdown}}
     <img src="/images/schema.png">
+    {{#notest}}
     <script src="https://gist.github.com/1704547.js"> </script>
+    {{/notest}}
   </div>
 </div>
 
 <script type="text/javascript">
   $("#go").submit(function() {
     var val = $("#topic").val()
-    console.log(val);
     if(val.length > 0) {
       window.location = "/topics/" + val;
     }

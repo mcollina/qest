@@ -32,14 +32,16 @@ module.exports = (app) ->
 
   class Data
 
-    constructor: (@key, @value) ->
-      @value ||= null
+    constructor: (@key, val = null) ->
+      @setValue(val)
     
     getKey: () -> @key
 
     getValue: () -> @value
 
-    setValue: (val) -> @value = val
+    setValue: (val) ->
+      val = JSON.stringify(val) if val? and typeof val != 'string'
+      @value = val
 
     on: (event, callback) ->
       app.redis.pubsub.subscribe(buildKey(@key))
@@ -51,15 +53,16 @@ module.exports = (app) ->
       @
 
     save: (callback) ->
+      app.redis.client.set buildKey(@key), @value
 
-      app.redis.client.sismember KEYS_SET_NAME, @key, (err, result) =>
-        if result == 0
-          app.redis.client.publish("newData", @key)
-          app.redis.client.sadd(KEYS_SET_NAME, @key)
-        else
-          app.redis.client.publish(buildKey(@key), @value)
+      app.redis.client.sadd KEYS_SET_NAME, @key, (err, result) =>
 
-        app.redis.client.set buildKey(@key), @value, (=> callback(@) if callback?)
+        # if we have a new key, than we fire newData
+        app.redis.client.publish("newData", @key) if result == 1
+
+        app.redis.client.publish(buildKey(@key), @value)
+
+        callback(@) if callback?
 
       @
 
@@ -98,7 +101,6 @@ module.exports = (app) ->
 
     # FIXME this is not atomic, is it a problem?
     app.redis.client.get buildKey(key), (err, oldValue) ->
-      console.log oldValue
       data = new Data(key, oldValue)
       data.setValue(value) if value?
       data.save(callback)

@@ -74,7 +74,7 @@ describe "Data", ->
       done()
       expect(err).to.eql("Record not found")
 
-  it "should provide a find method that uses a regexp for matching", ->
+  it "should provide a find method that uses a regexp for matching", (done) ->
 
     results = []
     waited = ->
@@ -115,6 +115,11 @@ describe "Data", ->
       @subject = new models.Data("key", "aaa")
       expect(@subject.getValue()).to.eql("aaa")
 
+    it "should accept an object as value in the constructor", ->
+      obj = { hello: 42 }
+      @subject = new models.Data("key", obj)
+      expect(@subject.getValue()).to.eql(JSON.stringify(obj))
+
     it "should set the value", ->
       @subject.setValue("bbb")
       expect(@subject.getValue()).to.eql("bbb")
@@ -125,6 +130,16 @@ describe "Data", ->
 
     it "should have a save method", ->
       expect(@subject.save).to.exist
+
+    it "should convert a message to JSON if it's not a string", (done) ->
+      @subject.setValue([1, 2])
+      expect(@subject.getValue()).to.eql("[1,2]")
+      done()
+
+    it "should save an array", (done) ->
+      @subject.setValue([1, 2])
+      @subject.save =>
+        done()
 
     it "should register for change", (done) ->
       @subject.save =>

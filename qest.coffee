@@ -8,13 +8,13 @@ path = require 'path'
 fs = require 'fs'
 hbs = require 'hbs'
 redis = require 'redis'
+mqtt = require "mqttjs"
 EventEmitter = require('events').EventEmitter
-cless = require 'connect-less'
 RedisStore = require('connect-redis')(express)
 
 # Create Server
 
-module.exports.app = app = express.createServer()
+module.exports.app = app = express()
 http = require('http').createServer(app)
 
 # Configuration
@@ -22,24 +22,33 @@ http = require('http').createServer(app)
 app.redis = {}
 
 module.exports.configure = configure = ->
-  app.configure -> 
-    app.set('views', __dirname + '/app/views')
-    app.set('view engine', 'hbs')
-    app.use(express.logger())
-    app.use(express.bodyParser())
-    app.use(express.methodOverride())
-    app.use(express.cookieParser())
-    app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
-      store: new RedisStore(), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
-    app.use(cless(src: __dirname + "/app/", dst: __dirname + "/public", compress: true))
-    app.use(app.router)
-    app.use(express.static(__dirname + '/public'))
-
   app.configure 'development', ->
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
 
   app.configure 'production', ->
     app.use(express.errorHandler())
+
+  app.configure -> 
+    app.set('views', __dirname + '/app/views')
+    app.set('view engine', 'hbs')
+    app.use(express.bodyParser())
+    app.use(express.methodOverride())
+    app.use(express.cookieParser())
+    app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
+      store: new RedisStore(client: app.redis.client), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
+
+    helperContext = {}
+    app.use(require("connect-assets")(src: "app/assets", helperContext: helperContext, detectChanges: process.env.NODE_ENV != 'production' ))
+
+    app.use(app.router)
+    app.use(express.static(__dirname + '/public'))
+
+    for type in ["js", "css"]
+      (->
+        t = type
+        hbs.registerHelper t, (file) ->
+          new hbs.SafeString(helperContext[t](file))
+      )()
 
   # setup websockets
   io = app.io = require('socket.io').listen(http)
@@ -48,7 +57,10 @@ module.exports.configure = configure = ->
     io.enable('browser client minification');  # send minified client
     io.enable('browser client etag');          # apply etag caching logic based on version number
     io.enable('browser client gzip');          # gzip the file
-    io.set('log level', 1)
+    io.set('log level', 0)
+
+  io.configure 'test', ->
+    io.set('log level', 0)
 
   # Helpers
   helpersPath = __dirname + "/app/helpers/"
@@ -58,9 +70,6 @@ module.exports.configure = configure = ->
   load("models")
   load("controllers")
 
-# load mqtt
-app.mqtt = require("mqttjs")
-
 load = (key) ->
   app[key] = {}
   loadPath = __dirname + "/app/#{key}/"
@@ -68,12 +77,19 @@ load = (key) ->
     if component.match /(js|coffee)$/
       component = path.basename(component, path.extname(component))
       loadedModule = require(loadPath + component)(app)
-      component = loadedModule.name if loadedModule.name?
+      component = loadedModule.name if loadedModule.name? and loadedModule.name != ""
       app[key][component] = loadedModule
 
 
 hbs.registerHelper 'json', (context) -> 
   new hbs.SafeString(JSON.stringify(context))
+
+hbs.registerHelper 'notest', (options) -> 
+  if process.env.NODE_ENV != "test"
+    input = options.fn(@)
+    return input
+  else
+    return ""
 
 hbs.registerHelper 'markdown', (options) ->
   input = options.fn(@)
@@ -110,7 +126,7 @@ module.exports.setupRedis = setupRedis = (opts = {}) ->
   app.redis.client = redis.createClient(args...)
   app.redis.client.select(opts.db || 0)
 
-start = module.exports.start = (opts={}) ->
+start = module.exports.start = (opts={}, cb=->) ->
 
   opts.port ||= argv.port
   opts.mqtt ||= argv.mqtt
@@ -125,12 +141,19 @@ start = module.exports.start = (opts={}) ->
   setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   configure()
 
-  http.listen(opts.port)
-  app.controllers.device_bridge.start(opts.mqtt)
-  console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
-  console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
+  countDone = 0
+  done = ->
+    cb() if countDone++ == 2
+
+  http.listen opts.port, ->
+    console.log("mqtt-rest web server listening on port %d in %s mode", opts.port, app.settings.env)
+    done()
+
+  mqtt.createServer(app.controllers.mqtt_api).listen opts.mqtt, ->
+    console.log("mqtt-rest mqtt server listening on port %d in %s mode", opts.mqtt, app.settings.env)
+    done()
+
+  app
 
 if require.main.filename == __filename
   start()
-
-

@@ -2,6 +2,7 @@ expect = require('chai').expect
 
 module.exports = ->
   @Given /^client "([^"]*)" subscribe to "([^"]*)" via ([^ ]*)$/, (client, topic, protocol, callback) ->
+    console.log @
     @getClient protocol, client, (client) -> 
       client.subscribe(topic)
       callback()

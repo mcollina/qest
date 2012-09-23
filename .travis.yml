@@ -1,5 +1,5 @@
 install: "npm install"
-script: "./node_modules/.bin/cake spec && ./node_modules/.bin/features"
+script: "./node_modules/.bin/cake spec && ./node_modules/.bin/cake features"
 node_js:
   - 0.8
 services:

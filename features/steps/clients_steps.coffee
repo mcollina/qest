@@ -1,8 +1,6 @@
 expect = require('chai').expect
 
 module.exports = ->
-  @World = require("../support/world").World
-
   @Given /^client "([^"]*)" subscribe to "([^"]*)" via ([^ ]*)$/, (client, topic, protocol, callback) ->
     @getClient protocol, client, (client) -> 
       client.subscribe(topic)

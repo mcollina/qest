@@ -1,7 +1,6 @@
 expect = require('chai').expect
 
 module.exports = () ->
-  @World = require("../support/world").World
 
   @When /^I visit "([^"]*)"$/, (url, callback) ->
     @browser.visit url, callback

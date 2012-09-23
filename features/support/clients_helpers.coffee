@@ -10,10 +10,7 @@ protocols =
   MQTT: MqttClient
 
 module.exports = ->
-  console.log "imported clients helper"
-
   @Before (done) ->
-    console.log "running before clients"
 
     @clients = {}
     @getClient = (protocol, name, callback) =>
@@ -27,7 +24,6 @@ module.exports = ->
     done()
 
   @After (done) ->
-    console.log "running after clients"
     for name, client of @clients
       client.disconnect()
 

@@ -11,11 +11,29 @@ opts =
 app = env.start opts
 browser = new zombie.Browser(site: "http://localhost:#{opts.port}", headers: { "Accept": "text/html" })
 
+{ MqttClient } = require("./clients/mqtt")
+{ HttpClient } = require("./clients/http")
+{ HttpJsonClient } = require("./clients/http_json")
+{ HttpTxtClient } = require("./clients/http_txt")
+
+protocols = 
+  HTTP: HttpClient
+  HTTP_JSON: HttpJsonClient
+  HTTP_TXT: HttpTxtClient
+  MQTT: MqttClient
+
 exports.World = (callback) ->
   @browser = browser
   @opts = opts
   @app = app
 
-  callback()
+  @clients = {}
+  @getClient = (protocol, name, callback) =>
+    if @clients[name]?
+      callback(@clients[name])
+    else
+      protocols[protocol].build @opts, (client) =>
+        @clients[name] = client
+        callback(client)
 
-  @
+  callback()

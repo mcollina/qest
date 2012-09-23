@@ -11,6 +11,7 @@ protocols =
 
 module.exports = ->
   @Before (done) ->
+    console.log "provisioning clients.."
 
     @clients = {}
     @getClient = (protocol, name, callback) =>

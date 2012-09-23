@@ -1,7 +1,7 @@
 {
     "name"              : "qest", 
     "version"           : "0.0.1",
-    "description"       : "A REST bridge to MQTT and REST", 
+    "description"       : "A REST bridge to MQTT", 
     "keywords"          : ["MQTT", "WebSockets", "REST"], 
     "author"            : "hello@matteocollina.com",
     "licenses"          : ["MIT"],

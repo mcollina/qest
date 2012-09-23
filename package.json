@@ -28,5 +28,8 @@
       "chai" : "= 1.1.0",
       "benchmark" : "git://github.com/bestiejs/benchmark.js.git#master",
       "request": "= 2.10.0"
+    }, 
+    "scripts": {
+      "test": "./node_modules/.bin/cake spec && ./node_modules/.bin/cake features"
     }
 }

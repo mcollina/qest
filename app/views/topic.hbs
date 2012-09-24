@@ -29,4 +29,7 @@
 </div>
 
 <script type="text/javascript" src="/socket.io/socket.io.js"></script>
-{{ js "topics" }}
+{{ js "topics.js" }}
+<script type="text/javascript">
+  setupTopic("{{topic}}");
+</script>

@@ -29,6 +29,7 @@ function setupTopic(topic) {
         // if we are here payload is a JSON
         textarea.val(JSON.stringify(data.payload, null, 4));
         validate.attr("checked", true);
+        last_data.json = true;
       } catch (e) {
         // payload is not a JSON
         textarea.val(data.payload);
@@ -81,13 +82,21 @@ function setupTopic(topic) {
   });
 
   cancel.click(function() {
-    textarea.val(last_data.payload);
+    if(last_data.json) {
+      textarea.val(JSON.stringify(last_data.payload));
+    } else {
+      textarea.val(last_data.payload);
+    }
     validate.attr("checked", last_data.json);
     textarea.attr("readonly", true);
     validate.attr("disabled", true);
     update.toggle();
     cancel.toggle();
     edit.toggle();
+
+    textarea.removeClass("error");
+    textarea_field.removeClass("error");
+    textarea_error.hide();
     return false;
   });
 }

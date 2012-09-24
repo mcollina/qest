@@ -11,7 +11,6 @@ redis = require 'redis'
 mqtt = require "mqttjs"
 EventEmitter = require('events').EventEmitter
 RedisStore = require('connect-redis')(express)
-Mincer  = require('mincer')
 
 # Create Server
 
@@ -38,66 +37,8 @@ module.exports.configure = configure = ->
     app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
       store: new RedisStore(client: app.redis.client), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
 
-    helperContext = {}
-    environment = new Mincer.Environment()
-    environment.appendPath('app/assets/js')
-    environment.appendPath('app/assets/css')
-    app.use("/assets", Mincer.createServer(environment))
-
     app.use(app.router)
     app.use(express.static(__dirname + '/public'))
-
-    # dummy helper that injects extension
-    rewrite_extension = (source, ext) ->
-      source_ext = path.extname(source)
-      if (source_ext == ext) 
-        source 
-      else
-        (source + ext)
-
-    # returns a list of asset paths
-    find_asset_paths = (logicalPath, ext) ->
-      asset = environment.findAsset(logicalPath)
-      paths = []
-
-      if (!asset)
-        return null
-
-      if ('production' != process.env.NODE_ENV && asset.isCompiled)
-        asset.toArray().forEach (dep) ->
-          paths.push('/assets/' + rewrite_extension(dep.logicalPath, ext) + '?body=1')
-      else
-        paths.push('/assets/' + rewrite_extension(asset.digestPath, ext))
-
-      return paths
-
-    hbs.registerHelper 'js', (logicalPath) ->
-      paths = find_asset_paths(logicalPath, ".js")
-
-      if (!paths) 
-        # this will help us notify that given logicalPath is not found
-        # without "breaking" view renderer
-        return new hbs.SafeString('<script type="application/javascript">alert(Javascript file ' +
-          JSON.stringify(logicalPath).replace(/"/g, '\\"') +
-          ' not found.")</script>')
-
-      result = paths.map (path) ->
-        '<script type="application/javascript" src="' + path + '"></script>'
-      new hbs.SafeString(result.join("\n"))
-
-    hbs.registerHelper 'css', (logicalPath) ->
-      paths = find_asset_paths(logicalPath, ".css")
-
-      if (!paths) 
-        # this will help us notify that given logicalPath is not found
-        # without "breaking" view renderer
-        return new hbs.SafeString('<script type="application/javascript">alert(CSS file ' +
-          JSON.stringify(logicalPath).replace(/"/g, '\\"') +
-          ' not found.")</script>')
-
-      result = paths.map (path) ->
-        '<link rel="stylesheet" type="text/css" href="' + path + '" />'
-      new hbs.SafeString(result.join("\n"))
 
   # setup websockets
   io = app.io = require('socket.io').listen(http)
@@ -111,13 +52,9 @@ module.exports.configure = configure = ->
   io.configure 'test', ->
     io.set('log level', 0)
 
-  # Helpers
-  helpersPath = __dirname + "/app/helpers/"
-  for helper in fs.readdirSync(helpersPath)
-    app.helpers require(helpersPath + helper) if helper.match /(js|coffee)$/
-
   load("models")
   load("controllers")
+  load("helpers")
 
 load = (key) ->
   app[key] = {}
@@ -126,24 +63,8 @@ load = (key) ->
     if component.match /(js|coffee)$/
       component = path.basename(component, path.extname(component))
       loadedModule = require(loadPath + component)(app)
-      component = loadedModule.name if loadedModule.name? and loadedModule.name != ""
+      component = loadedModule.name if loadedModule?.name? and loadedModule.name != ""
       app[key][component] = loadedModule
-
-
-hbs.registerHelper 'json', (context) -> 
-  new hbs.SafeString(JSON.stringify(context))
-
-hbs.registerHelper 'notest', (options) -> 
-  if process.env.NODE_ENV != "test"
-    input = options.fn(@)
-    return input
-  else
-    return ""
-
-hbs.registerHelper 'markdown', (options) ->
-  input = options.fn(@)
-  result = require( "markdown" ).markdown.toHTML(input)
-  return result
 
 # Start the module if it's needed
 

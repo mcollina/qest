@@ -8,5 +8,5 @@ Feature: Home page
 
   Scenario: QEST title
     When I visit "/"
-    Then I should see the title "QEST"
+    Then I should see the title "QEST - The Internet of Things broker that loves devices and developers"
 

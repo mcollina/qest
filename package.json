@@ -18,7 +18,7 @@
       , "hiredis": "= 0.1.13"
       , "connect-redis" : "1.4.0"
       , "markdown" : "0.3.1"
-      , "connect-assets": "2.3.3"
+      , "mincer": "0.3.0"
     },
     "devDependencies" : {
       "cucumber" : "= 0.2.21",

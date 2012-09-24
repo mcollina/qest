@@ -37,18 +37,8 @@ module.exports.configure = configure = ->
     app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
       store: new RedisStore(client: app.redis.client), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
 
-    helperContext = {}
-    app.use(require("connect-assets")(src: "app/assets", helperContext: helperContext, detectChanges: process.env.NODE_ENV != 'production' ))
-
     app.use(app.router)
     app.use(express.static(__dirname + '/public'))
-
-    for type in ["js", "css"]
-      (->
-        t = type
-        hbs.registerHelper t, (file) ->
-          new hbs.SafeString(helperContext[t](file))
-      )()
 
   # setup websockets
   io = app.io = require('socket.io').listen(http)
@@ -62,13 +52,9 @@ module.exports.configure = configure = ->
   io.configure 'test', ->
     io.set('log level', 0)
 
-  # Helpers
-  helpersPath = __dirname + "/app/helpers/"
-  for helper in fs.readdirSync(helpersPath)
-    app.helpers require(helpersPath + helper) if helper.match /(js|coffee)$/
-
   load("models")
   load("controllers")
+  load("helpers")
 
 load = (key) ->
   app[key] = {}
@@ -77,24 +63,8 @@ load = (key) ->
     if component.match /(js|coffee)$/
       component = path.basename(component, path.extname(component))
       loadedModule = require(loadPath + component)(app)
-      component = loadedModule.name if loadedModule.name? and loadedModule.name != ""
+      component = loadedModule.name if loadedModule?.name? and loadedModule.name != ""
       app[key][component] = loadedModule
-
-
-hbs.registerHelper 'json', (context) -> 
-  new hbs.SafeString(JSON.stringify(context))
-
-hbs.registerHelper 'notest', (options) -> 
-  if process.env.NODE_ENV != "test"
-    input = options.fn(@)
-    return input
-  else
-    return ""
-
-hbs.registerHelper 'markdown', (options) ->
-  input = options.fn(@)
-  result = require( "markdown" ).markdown.toHTML(input)
-  return result
 
 # Start the module if it's needed
 

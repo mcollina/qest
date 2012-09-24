@@ -8,17 +8,23 @@ module.exports = (app) ->
 
     topics = req.session.topics || []
     index = topics.indexOf(topic)
+    
     if index >= 0
       topics = [].concat(topics.splice(0, index), topics.splice(index + 1, req.session.topics.length))
+
     topics.push(topic)
     topics.pull() if topics.length > 5
+
     req.session.topics = topics
 
     Data.find topic, (data, err) ->
+
       type = req.accepts(['txt', 'json', 'html'])
 
       if type == "html"
         res.render 'topic.hbs', topic: topic
+      else if err?
+        res.send 404
       else if type == 'json'
         res.contentType('json')
         try
@@ -27,17 +33,11 @@ module.exports = (app) ->
         catch e
           # else we transform it in string
           value = "" + data.getValue()
-        if err?
-          res.send 404
-        else
-          res.json value
+        res.json value
       else if type == 'txt'
-        if err?
-          res.send "", 404
-        else
-          res.send "" + data.getValue()
+        res.send data.getValue()
       else
-        res.send "", 406
+        res.send 406
 
   app.put /^\/topics\/(.+)$/, (req, res) ->
     topic = req.params[0]

@@ -1,24 +1,42 @@
 
-<div class="page-header">
-  <h1>QEST</h1>
+<!-- Main hero unit for a primary marketing message or call to action -->
+<div class="jumbo">
+  <div class="row">
+    <div class="span1"><br></div>
+    <div class="span6">
+      <h1>QEST</h1>
+      <form id="go" method="get">
+        <h3>Open your topic</h3>
+        <div class="input-append">
+          <input type="text" id="topic" name="topic" class="input-large" rows="10" placeholder="Enter the topic name"></input>
+          <input type="submit" class="btn btn-success" value="GO!"></input>
+        </div>
+      </form>
+    </div>
+    <div class="span4">
+      <h2>Your latest topics</h2>
+      {{#if topics.length }}
+        <ul>
+        {{#each topics}}
+          <li><a href="/topics/{{this}}">{{this}}</a></li>
+        {{/each}}
+        </ul>
+      {{else}}
+      <p>
+        No topics found, let&lsquo;s open a new one!
+      </p>
+      {{/if}}
+    </div>
+    <div class="span1"><br></div>
+  </div>
 </div>
+
 <div class="row">
-  <div class="span7">
+  <div class="span4">
+    <h2>Building</h2>
 {{#markdown}}
-Hello geeks!
-
-What you are seeing here is a prototype of a distributed [MQTT](http://mqtt.org) broker which is accessible through REST.
-That's a lot of jargon, so let me show you the whole picture!
-
-Here we are dreaming a Web of Things, where you can reach (and interact) with each of your "real" devices using the web,
-as it's the Way everybody interacts with a computer these days.
-However it's somewhat hard to build these kind of apps, so researchers have written custom protocols for communicating 
-with the devices.
-The state-of-the-art seems to be [MQTT](http://mqtt.org), which is standard, free of royalties, and widespread: 
-there are libraries for all the major platforms.
-
-QEST is a stargate between the universe of devices which speak MQTT, and the universe of apps which
-speak HTTP.
+QEST is a stargate between the universe of devices which speak [MQTT](http://mqtt.org), and the universe of apps which
+speak [HTTP](http://en.wikipedia.org/wiki/HTTP) and [REST](http://en.wikipedia.org/wiki/REST).
 In this way you don't have to deal any custom protocol, you just GET and PUT the topic URI, like these:
 
     $ curl -X PUT -d '{ "hello": 555 }' \
@@ -28,63 +46,41 @@ In this way you don't have to deal any custom protocol, you just GET and PUT the
     { "hello": 555 }
 
 Let's build cool things with MQTT, REST and Arduino!
-
-~ Matteo
-
 {{/markdown}}
+  </div>
 
-  </div>
-  <div class="span6 topic-bar">
-    <h2>Your latest topics</h2>
-    {{#if topics.length }}
-      <ul>
-      {{#each topics}}
-        <li><a href="/topics/{{this}}">{{this}}</a></li>
-      {{/each}}
-      </ul>
-    {{else}}
-    <p>
-      No topics found, let's open a new one!
-    </p>
-    {{/if}}
-    <form id="go" method="get">
-      <h2>Open your topic</h2>
-      <input type="text" id="topic" name="topic" class="large" rows="10" placeholder="Enter the topic name"></input>
-      <input type="submit" class="btn primary" value="GO!"></input>
-    </form>
-<!-- Begin MailChimp Signup Form -->
-<form action="http://matteocollina.us2.list-manage.com/subscribe/post?u=200c4e2156160bb7b9d94e743&amp;id=71af41f393" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" target="_blank">
-	<h2>Subscribe to our mailing list</h2>
-	<input type="email" value="" name="EMAIL" placeholder="Enter your email here" id="mce-EMAIL">
-  <input type="submit" class="btn primary" value="Subscribe" name="subscribe"></input>
-</form>
-<!--End mc_embed_signup-->
-  </div>
-</div>
-<div class="row">
-  <div class="span13">
+  <div class="span4">
+
+    <h2>Dreaming</h2>
 {{#markdown}}
-NetworkButton Example
------
+Here we are dreaming a Web of Things, where you can reach (and interact) with each of your "real" devices using the web,
+as it's the Way everybody interacts with a computer these days.
+However it's somewhat hard to build these kind of apps, so researchers have written custom protocols for communicating 
+with the devices.
 
-NetworkButton is a forest of network enabled leds that switch on and off on simultaneosly.
-It's also an example with MQTT-REST.
+The state-of-the-art protocol for __devices__ is [MQTT](http://mqtt.org), which is standard, free of royalties, and widespread: 
+there are libraries for all the major platforms.
 
-Let's build your own!
+The state-of-the-art protocol for __apps__ are [REST](http://en.wikipedia.org/wiki/REST) and [HTTP](http://en.wikipedia.org/wiki/HTTP),
+so why can't we bridge them? So QEST was born.
 {{/markdown}}
-    <img src="/images/schema.png">
-    {{#notest}}
-    <script src="https://gist.github.com/1704547.js"> </script>
-    {{/notest}}
+  </div>
+
+  <div class="span4">
+    <!-- Begin MailChimp Signup Form -->
+    <form action="http://matteocollina.us2.list-manage.com/subscribe/post?u=200c4e2156160bb7b9d94e743&amp;id=71af41f393" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" target="_blank">
+      <h2>Mailing list</h2>
+      <div class="input-append">
+        <input type="email" class="input-large" value="" name="EMAIL" placeholder="Enter your email here" id="mce-EMAIL">
+        <input type="submit" class="btn btn-primary" value="Subscribe" name="subscribe"></input>
+      </div>
+    </form>
+    <!--End mc_embed_signup-->
+
+    <h2>Examples:</h2>
+{{#markdown}}
+* [NetworkButton](https://github.com/mcollina/qest/wiki/Network-Button-Example)
+{{/markdown}}
   </div>
 </div>
-
-<script type="text/javascript">
-  $("#go").submit(function() {
-    var val = $("#topic").val()
-    if(val.length > 0) {
-      window.location = "/topics/" + val;
-    }
-    return false;
-  });
-</script>
+{{ js "home.js" }}

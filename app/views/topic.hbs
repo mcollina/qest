@@ -2,28 +2,28 @@
   <h1>Topic: {{topic}}</h1>
 </div>
 <div class="row">
-  <div class="span14">
-    <form method="post">
-      <fieldset>
-        <div id="payload-field" class="clearfix">
-          <label for="payload">Content</label>
-          <div class="input">
-            <textarea id="payload" name="payload" class="span8" rows="10" readonly="true"></textarea>
-            <span id="payload-error" class="help-inline hide">Impossible to parse as JSON</span>
-          </div>
+  <div class="span12">
+    <form class="form-horizontal">
+      <div id="payload-field" class="control-group">
+        <label class="control-label" for="payload">Payload</label>
+        <div class="controls">
+          <textarea id="payload" name="payload" class="span8" rows="10" readonly="true"></textarea>
+          <span id="payload-error" class="help-inline hide">Impossible to parse as JSON</span>
         </div>
-        <div class="clearfix">
-          <label for="is-json">Validate as JSON</label>
-          <div class="input">
-            <input id="validate" type="checkbox" disabled>
-          </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="is-json">Validate as JSON</label>
+        <div class="controls">
+          <input id="validate" type="checkbox" disabled>
         </div>
-        <div class="actions">
-          <input id="update" type="submit" class="btn success" value="Update"></input>
-          <input id="edit" type="submit" class="btn primary" value="Edit"></input>
-          <input id="cancel" type="submit" class="btn error" value="Cancel"></input>
+      </div>
+      <div class="control-group">
+        <div class="controls">
+          <input id="update" type="submit" class="btn btn-success" value="Update"></input>
+          <input id="edit" type="submit" class="btn btn-primary" value="Edit"></input>
+          <input id="cancel" type="submit" class="btn btn-danger" value="Cancel"></input>
         </div>
-      </fieldset>
+      </div>
     </form>
   </div>
 </div>

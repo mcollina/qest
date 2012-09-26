@@ -43,22 +43,30 @@
 
   </div> <!-- /container -->
 
+  {{#notest}}
+
   <script type="text/javascript">
 
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-20777444-3']);
-  _gaq.push(['_setDomainName', 'mqtt.matteocollina.com']);
-  _gaq.push(['_trackPageview']);
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-35116605-1']);
+    _gaq.push(['_setDomainName', 'qest.me']);
+    _gaq.push(['_setAllowLinker', true]);
+    _gaq.push(['_trackPageview']);
 
-  {{#notest}}
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-  {{/notest}}
+    (function() {
+     var ga = document.createElement('script');
+     ga.type = 'text/javascript'; ga.async = true;
+     ga.src = ('https:' ==
+       document.location.protocol ? 'https://ssl' :
+       'http://www') + '.google-analytics.com/ga.js';
+     var s =
+     document.getElementsByTagName('script')[0];
+     s.parentNode.insertBefore(ga, s);
+     })();
 
   </script>
+
+  {{/notest}}
 </body>
 </html>
 

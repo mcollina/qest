@@ -57,6 +57,14 @@ $ ./qest.js
   fine, but please isolate to its own commit so I can cherry-pick around
   it.
 
+## Thanks
+
+This work would not have been possible without the support
+of the University of Bologna, which funded my Ph.D. program.
+Moreover I would like to thank my professors, Giovanni
+Emanuele Corazza and Alessandro Vanelli-Coralli for the support
+and the feedbacks.
+
 ## License
 
 Copyright (c) 2012 Matteo Collina, http://matteocollina.com

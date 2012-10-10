@@ -2,19 +2,20 @@
 @import "./lib/bootstrap.less";
 
 body {
-  padding-top: 60px;
   padding-bottom: 40px;
+  background-image: url("/images/grey.png");
+  background-repeat: repeat;
 }
 
 @import "./lib/responsive.less";
 
 .jumbo {
-  background-color: @heroUnitBackground;
-  background-image: url("/images/grey.png");
-  background-repeat: repeat;
+
+  background-color: rgba(0, 0, 0, 0.1);
+  .border-radius(5px);
 
   .container();
-  padding-top: 40px;
+  padding-top: 60px;
   padding-bottom: 40px;
   margin-bottom: 30px;
 

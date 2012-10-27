@@ -1,6 +1,9 @@
 
 # QEST
 
+[![Build
+Status](https://travis-ci.org/mcollina/qest.png)](https://travis-ci.org/mcollina/qest)
+
 Hello geeks!
 
 What you are seeing here is a prototype of a distributed [MQTT](http://mqtt.org) broker which is accessible through REST.

@@ -13,9 +13,9 @@
   ],
   "private": true,
   "dependencies": {
-    "coffee-script": "= 1.3.3",
+    "coffee-script": "~1.4.0",
     "optimist": "= 0.3.4",
-    "express": "= 3.0.0rc3",
+    "express": "~3.0.1",
     "hbs": "= 1.0.4",
     "socket.io": "= 0.9.10",
     "mqttjs": "= 0.1.7",

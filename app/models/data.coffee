@@ -8,70 +8,51 @@ events = {}
 KEYS_SET_NAME = 'topics'
 
 module.exports = (app) ->
-
-  getEventEmitter = (key) ->
-    unless events[key]?
-      events[key] = new EventEmitter()
-      events[key].setMaxListeners(0)
-      app.redis.pubsub.subscribe(key)
-
-    events[key]
-
   buildKey = (key) ->
-    "topic:" + key
-
-  app.redis.pubsub.subscribe('newData')
-
-  app.redis.pubsub.on 'message', (topic, value) ->
-    if topic != 'newData'
-      topic = topic.split(":")[1..-1].join("")
-      data = new Data(topic, value)
-      getEventEmitter(topic).emit('change', data)
-    else
-      Data.find value, (data) -> globalEventEmitter.emit("newData", data)
+    "topic:#{key}"
 
   class Data
 
-    constructor: (@key, val = null) ->
-      @setValue(val)
+    constructor: (@key, @value) ->
+      @value ||= null
     
-    getKey: () -> @key
+    Object.defineProperty @prototype, 'key',
+      enumerable: true
+      configurable: false
+      get: -> @_key
+      set: (key) ->
+        @redisKey = buildKey(key)
+        @_key = key
 
-    getValue: () -> @value
+    Object.defineProperty @prototype, 'jsonValue',
+      configurable: false
+      enumerable: true
+      get: -> 
+        JSON.stringify(@value)
 
-    setValue: (val) ->
-      val = JSON.stringify(val) if val? and typeof val != 'string'
-      @value = val
-
-    on: (event, callback) ->
-      app.redis.pubsub.subscribe(buildKey(@key))
-      getEventEmitter(@key).on(event, callback)
-      @
-
-    removeListener: (event, callback) ->
-      getEventEmitter(@key).removeListener(event, callback)
-      @
+      set: (val) ->
+        @value = JSON.parse(val)
 
     save: (callback) ->
-      app.redis.client.set buildKey(@key), @value
+      app.redis.client.set @redisKey, @jsonValue, (err) =>
+        app.ascoltatore.publish @key, @value, =>
+          callback(err, @) if callback?
 
-      app.redis.client.sadd KEYS_SET_NAME, @key, (err, result) =>
-
-        # if we have a new key, than we fire newData
-        app.redis.client.publish("newData", @key) if result == 1
-
-        app.redis.client.publish(buildKey(@key), @value)
-
-        callback(@) if callback?
-
-      @
+      app.redis.client.sadd KEYS_SET_NAME, @key
 
   Data.find = (pattern, callback) ->
 
     foundRecord = (key) ->
       app.redis.client.get buildKey(key), (err, value) ->
-        error = "Record not found" unless value?
-        callback(new Data(key, value), error) if callback?
+        if err
+          callback(err) if callback?
+          return
+
+        unless value?
+          callback("Record not found") if callback?
+          return
+
+        callback(null, Data.fromRedis(key, value)) if callback?
 
     if pattern.constructor != RegExp
       foundRecord(pattern)
@@ -86,8 +67,8 @@ module.exports = (app) ->
     args = Array.prototype.slice.call arguments
 
     key = args.shift() # first arg shifted out
-
     arg = args.shift() # second arg popped out
+
     if typeof arg == 'function'
       # if the second arg is a function,
       # then there is no third arg
@@ -101,26 +82,25 @@ module.exports = (app) ->
 
     # FIXME this is not atomic, is it a problem?
     app.redis.client.get buildKey(key), (err, oldValue) ->
-      data = new Data(key, oldValue)
-      data.setValue(value) if value?
+      data = Data.fromRedis(key, oldValue)
+      data.value = value if value?
       data.save(callback)
 
     Data
 
-  Data.reset = ->
-    for key, event of events
-      app.redis.pubsub.unsubscribe(buildKey(key))
-      delete events[key]
-    globalEventEmitter.removeAllListeners()
+  Data.fromRedis = (topic, value) ->
+    data = new Data(topic)
+    data.jsonValue = value
+    data
 
-  Data.reset()
-
-  Data.on = (event, callback) ->
-    globalEventEmitter.on(event, callback)
+  Data.subscribe = (topic, callback) ->
+    callback._subscriber = (actualTopic, value) ->
+      callback(new Data(actualTopic, value))
+    app.ascoltatore.subscribe topic, callback._subscriber
     @
 
-  Data.removeListener = (event, callback) ->
-    globalEventEmitter.removeListener(event, callback)
+  Data.unsubscribe = (topic, callback) ->
+    app.ascoltatore.unsubscribe topic, callback._subscriber
     @
 
   Data

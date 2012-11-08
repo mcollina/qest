@@ -11,6 +11,7 @@ redis = require 'redis'
 mqtt = require "mqttjs"
 EventEmitter = require('events').EventEmitter
 RedisStore = require('connect-redis')(express)
+ascoltatori = require('ascoltatori')
 
 # Create Server
 
@@ -89,12 +90,19 @@ optionParser = optimist.
 
 argv = optionParser.argv
 
-module.exports.setupRedis = setupRedis = (opts = {}) ->
+module.exports.setupAscoltatore = setupAscoltatore = (opts = {}) ->
+  app.ascoltatore = new ascoltatori.RedisAscoltatore
+    redis: redis
+    port: opts.port
+    host: opts.host
+    db: opts.db
+
+module.exports.setup = setup = (opts = {}) ->
   args = [opts.port, opts.host]
-  app.redis.pubsub = redis.createClient(args...)
-  app.redis.pubsub.select(opts.db || 0)
   app.redis.client = redis.createClient(args...)
   app.redis.client.select(opts.db || 0)
+
+  setupAscoltatore(opts)
 
 start = module.exports.start = (opts={}, cb=->) ->
 
@@ -108,7 +116,7 @@ start = module.exports.start = (opts={}, cb=->) ->
     optionParser.showHelp()
     return 1
 
-  setupRedis(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
+  setup(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   configure()
 
   countDone = 0

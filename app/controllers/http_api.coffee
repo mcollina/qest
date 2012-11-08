@@ -17,7 +17,7 @@ module.exports = (app) ->
 
     req.session.topics = topics
 
-    Data.find topic, (data, err) ->
+    Data.find topic, (err, data) ->
 
       type = req.accepts(['txt', 'json', 'html'])
 
@@ -28,14 +28,11 @@ module.exports = (app) ->
       else if type == 'json'
         res.contentType('json')
         try
-          # if it's a json, we parse it and render
-          value = JSON.parse(data.getValue())
+          res.json data.value
         catch e
-          # else we transform it in string
-          value = "" + data.getValue()
-        res.json value
+          res.json "" + data.value
       else if type == 'txt'
-        res.send data.getValue()
+        res.send data.value
       else
         res.send 406
 
@@ -45,5 +42,5 @@ module.exports = (app) ->
       payload = req.body
     else
       payload = req.body.payload
-    Data.findOrCreate(topic, payload)
+    Data.findOrCreate topic, payload
     res.send 204

@@ -2,6 +2,7 @@
 helper = require("../spec_helper")
 
 expect = require('chai').expect
+async = require("async")
 
 describe "Data", ->
 
@@ -16,155 +17,193 @@ describe "Data", ->
 
   beforeEach (done) ->
     helper.setup(done)
+  
+  afterEach (done) ->
+    helper.tearDown(done)
 
   it "should have a findOrCreate method", ->
     expect(models.Data.findOrCreate).to.exist
 
   it "should findOrCreate a new instance with a key", (done) ->
-    models.Data.findOrCreate "key", (data) =>
-      done()
+    models.Data.findOrCreate "key", (err, data) =>
       expect(data).to.eql(new models.Data("key"))
+      done()
 
   it "should findOrCreate a new instance with a key and a value", (done) ->
-    models.Data.findOrCreate "aaa", "bbbb", (data) =>
-      done()
+    models.Data.findOrCreate "aaa", "bbbb", (err, data) =>
       expect(data).to.eql(new models.Data("aaa", "bbbb"))
+      done()
 
   it "should findOrCreate an old instance overriding the value", (done) ->
     models.Data.findOrCreate "aaa", "bbbb", =>
       models.Data.findOrCreate "aaa", "ccc", =>
-        models.Data.find "aaa", (data) =>
-          done()
+        models.Data.find "aaa", (err, data) =>
           expect(data).to.eql(new models.Data("aaa", "ccc"))
+          done()
 
-  it "should emit a change event when findOrCreate does not override the value", (done) ->
-    models.Data.findOrCreate "aaa", "bbbb", (oldData) =>
-      models.Data.findOrCreate "aaa", "bbbb"
-      oldData.on 'change', (data) => done()
-
-  it "should provide a global event for registering for new data (fired by findOrCreate)", (done) ->
-    models.Data.on "newData", (data) =>
-      expect(data).to.eql(new models.Data("hello world", "ggg"))
+  it "should publish an update when calling findOrCreate", (done) ->
+    models.Data.subscribe "aaa", (data) =>
       done()
-    models.Data.findOrCreate("hello world", "ggg")
+    models.Data.findOrCreate "aaa", "bbbb"
 
   it "should allow subscribing in the create step", (done) ->
-    models.Data.findOrCreate "aaa", (data) =>
-      data.on 'change', (curr) ->
-        done()
-        expect(data).to.eql(new models.Data("aaa", "ccc"))
+    models.Data.findOrCreate "aaa", (err, data) =>
+      models.Data.subscribe "aaa", (curr) ->
+        done() if curr.value == "ccc"
 
-      data.setValue("ccc")
+      data.value = "ccc"
       data.save()
 
-  it "should provide a global event for registering for new data (fired by save)", (done) ->
-    models.Data.on "newData", (data) =>
-      expect(data).to.eql(new models.Data("hello world", "ggg"))
-      done()
+  it "should allow unsubscribing in the create step", (done) ->
+    models.Data.findOrCreate "aaa", (err, data) =>
+      func = -> throw "This should never be called"
 
-    new models.Data("hello world", "ggg").save()
+      models.Data.subscribe "aaa", func
+      models.Data.unsubscribe "aaa", func
 
-  it "should provide a find method to detected if an object exists", (done) ->
-    models.Data.find "obj", (data, err) =>
-      done()
-      expect(err).to.eql("Record not found")
+      models.Data.subscribe "aaa", (curr) ->
+        done()
+
+      data.save()
 
   it "should provide a find method that returns an error if there is no obj", (done) ->
-    models.Data.find "obj", (data, err) =>
-      done()
+    models.Data.find "obj", (err, data) =>
       expect(err).to.eql("Record not found")
+      done()
 
   it "should provide a find method that uses a regexp for matching", (done) ->
-
     results = []
-    waited = ->
-      models.Data.find /hello .*/, (data, err) ->
-        results.push(data.getKey()) unless err?
+
+    async.parallel([
+      async.apply(models.Data.findOrCreate, "hello bob", "aaa"),
+      async.apply(models.Data.findOrCreate, "hello mark", "aaa"),
+    ], ->
+      models.Data.find /hello .*/, (err, data) ->
+        results.push(data.key) unless err?
         if results.length == 2
           expect(results).to.contain("hello bob")
           expect(results).to.contain("hello mark")
           done()
+    )
 
-    createdBob = false
-    createdMark = false
+  it "should provide a subscribe method that works for new topics", (done) ->
+    results = []
+    models.Data.subscribe "hello/*", (data) ->
+      results.push(data.key)
+      if results.length == 2
+        expect(results).to.contain("hello/bob")
+        expect(results).to.contain("hello/mark")
+        done()
 
-    models.Data.findOrCreate "hello bob", "aaa", ->
-      createdBob = true
-      waited() if createdBob and createdMark
-
-    models.Data.findOrCreate "hello mark", "aaa", -> 
-      createdMark = true
-      waited() if createdBob and createdMark
+    async.parallel([
+      async.apply(models.Data.findOrCreate, "hello/bob", "aaa"),
+      async.apply(models.Data.findOrCreate, "hello/mark", "aaa"),
+    ])
 
   describe "instance", ->
 
-    beforeEach ->
-      @subject = new models.Data("key", "value")
-
     it "should get the key", ->
-      expect(@subject.getKey()).to.eql("key")
+      subject = new models.Data("key", "value")
+      expect(subject.key).to.eql("key")
 
     it "should get the key (dis)", ->
-      @subject = new models.Data("aaa")
-      expect(@subject.getKey()).to.eql("aaa")
+      subject = new models.Data("aaa")
+      expect(subject.key).to.eql("aaa")
 
     it "should get the value", ->
-      expect(@subject.getValue()).to.eql("value")
+      subject = new models.Data("key", "value")
+      expect(subject.value).to.eql("value")
 
     it "should get the value (dis)", ->
-      @subject = new models.Data("key", "aaa")
-      expect(@subject.getValue()).to.eql("aaa")
+      subject = new models.Data("key", "aaa")
+      expect(subject.value).to.eql("aaa")
+
+    it "should get the redisKey", ->
+      subject = new models.Data("key", "value")
+      expect(subject.redisKey).to.eql("topic:key")
+
+    it "should get the redisKey (dis)", ->
+      subject = new models.Data("aaa/42", "value")
+      expect(subject.redisKey).to.eql("topic:aaa/42")
 
     it "should accept an object as value in the constructor", ->
       obj = { hello: 42 }
-      @subject = new models.Data("key", obj)
-      expect(@subject.getValue()).to.eql(JSON.stringify(obj))
+      subject = new models.Data("key", obj)
+      expect(subject.value).to.eql(obj)
+
+    it "should export its value as JSON", ->
+      obj = { hello: 42 }
+      subject = new models.Data("key", obj)
+      expect(subject.jsonValue).to.eql(JSON.stringify(obj))
+
+    it "should export its value as JSON when setting the value", ->
+      obj = { hello: 42 }
+      subject = new models.Data("key")
+      subject.value = obj
+      expect(subject.jsonValue).to.eql(JSON.stringify(obj))
 
     it "should set the value", ->
-      @subject.setValue("bbb")
-      expect(@subject.getValue()).to.eql("bbb")
+      subject = new models.Data("key")
+      subject.value = "bbb"
+      expect(subject.value).to.eql("bbb")
 
     it "should set the value (dis)", ->
-      @subject.setValue("ccc")
-      expect(@subject.getValue()).to.eql("ccc")
+      subject = new models.Data("key")
+      subject.value = "ccc"
+      expect(subject.value).to.eql("ccc")
+
+    it "should set the json value", ->
+      subject = new models.Data("key")
+      subject.jsonValue = JSON.stringify("ccc")
+      expect(subject.value).to.eql("ccc")
 
     it "should have a save method", ->
-      expect(@subject.save).to.exist
-
-    it "should convert a message to JSON if it's not a string", (done) ->
-      @subject.setValue([1, 2])
-      expect(@subject.getValue()).to.eql("[1,2]")
-      done()
+      subject = new models.Data("key")
+      expect(subject.save).to.exist
 
     it "should save an array", (done) ->
-      @subject.setValue([1, 2])
-      @subject.save =>
+      subject = new models.Data("key")
+      subject.value = [1, 2]
+      subject.save =>
         done()
 
-    it "should register for change", (done) ->
-      @subject.save =>
-        @subject.on 'change', (data) =>
-          expect(data.getValue()).to.eql("aaaa")
+    it "should support subscribing for change", (done) ->
+      subject = new models.Data("key")
+      subject.save =>
+        models.Data.subscribe subject.key, (data) =>
+          expect(data.value).to.equal("aaaa")
           done()
 
-        @subject.setValue("aaaa")
-        @subject.save()
+        subject.value = "aaaa"
+        subject.save()
+
+    it "should register for change before creation", (done) ->
+      subject = new models.Data("key")
+      models.Data.subscribe subject.key, (data) =>
+        expect(data.value).to.equal("aaaa")
+        done()
+
+      subject.value = "aaaa"
+      subject.save()
 
     it "should save and findOrCreate", (done) ->
-      @subject.save =>
-        models.Data.findOrCreate @subject.getKey(), (data) =>
+      subject = new models.Data("key")
+      subject.save =>
+        models.Data.findOrCreate subject.key, (err, data) =>
+          expect(data).to.eql(subject)
           done()
-          expect(data).to.eql(@subject)
 
     it "should save and find", (done) ->
-      @subject.save =>
-        models.Data.find @subject.getKey(), (data) =>
+      subject = new models.Data("key")
+      subject.save =>
+        models.Data.find subject.key, (err, data) =>
+          expect(data).to.eql(subject)
           done()
-          expect(data).to.eql(@subject)
 
     it "should not persist the value before save", (done) ->
-      @subject.save =>
-        @subject.setValue("ccc")
-        models.Data.find @subject.getKey(), (data) ->
+      subject = new models.Data("key")
+      subject.save =>
+        subject.value = "ccc"
+        models.Data.find subject.key, (err, data) ->
+          expect(data.value).to.not.eql("ccc")
           done()
-          expect(data.getValue()).to.not.eql("ccc")

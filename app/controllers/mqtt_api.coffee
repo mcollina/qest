@@ -5,13 +5,10 @@ module.exports = (app) ->
   (client) ->
 
     listeners = {}
-    globalListener = null
 
-    unsubscribe_all = ->
-      Data.removeListener('newData', globalListener) if globalListener?
+    unsubscribeAll = ->
       for topic, listener of listeners
-        Data.find topic, (data) ->
-          data.removeListener('change', listener)
+        Data.unsubscribe(topic, listener)
 
     client.on 'connect', (packet) ->
       client.id = packet.client
@@ -24,37 +21,31 @@ module.exports = (app) ->
       for subscription in packet.subscriptions
         # '#' is 'match anything to the end of the string' */
         # + is 'match anything but a / until you hit a /' */
-        reg = new RegExp(subscription.topic.replace('+', '[^\/]+').replace('#', '.+$'));
-        subscriptions.push(reg)
+        subscriptions.push(subscription.topic.replace("#", "*"))
         granted.push 0
 
       client.suback(messageId: packet.messageId, granted: granted)
 
-      addListener = (data) ->
-
-        listener = (currentData) ->
-          try
-            client.publish(topic: currentData.getKey(), payload: currentData.getValue())
-          catch error
-            console.log error
-            client.close()
-
-        data.on 'change', listener
-
-        listeners[data.getKey()] = listener
-
-        listener(data) if data.getValue()?
-
-      # push the latest value to the new client,
-      # do not wait updates of the topic
+      # subscribe for updates
       for subscription in subscriptions
-        Data.find subscription, addListener
+        (->
+          listener = (data) ->
+            try
+              if typeof data.value == "string"
+                value = data.value
+              else
+                value = data.jsonValue
+              client.publish(topic: data.key, payload: value)
+            catch error
+              console.log error
+              client.close()
+          listeners[subscription] = listener
+          Data.subscribe(subscription, listener)
 
-      globalListener = (data) ->
-        for subscription in subscriptions
-          addListener(data) if subscription.test(data.getKey())
-
-      Data.on 'newData', globalListener
+          Data.find new RegExp(subscription), (err, data) ->
+            throw err if err? # the persistance layer is not working properly
+            listener(data)
+        )()
 
     client.on 'publish', (packet) ->
       Data.findOrCreate packet.topic, packet.payload
@@ -70,9 +61,7 @@ module.exports = (app) ->
       client.stream.end()
 
    	client.on 'close', (err) ->
-      unsubscribe_all()
+      unsubscribeAll()
     
     client.on 'unsubscribe', (packet) ->
-      # we do a trick to save our bench
-      unsubscribe_all()
       client.unsuback(messageId: packet.messageId)

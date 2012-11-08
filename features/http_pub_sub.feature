@@ -14,3 +14,8 @@ Feature: HTTP pub/sub
   Scenario: GETting and PUTting plain text
     When client "B" publishes "hello world" to "foobar" via HTTP_TXT
     Then client "A" should have received "hello world" from "foobar" via HTTP_TXT
+
+  Scenario: PUTting JSON and reading from MQTT
+    Given client "A" subscribe to "foobar" via MQTT
+    When client "B" publishes "[ 42, 43 ]" to "foobar" via HTTP_JSON
+    Then client "A" should have received "[42,43]" from "foobar" via MQTT

@@ -24,16 +24,13 @@ function setupTopic(topic) {
     data = { payload: data }
     last_data = data;
     if(textarea.attr("readonly")) {
-      try {
-        data.payload = JSON.parse(data.payload);
-        // if we are here payload is a JSON
+      if(typeof data.payload === "string") {
+        textarea.val(data.payload);
+        validate.removeAttr("checked");
+      } else {
         textarea.val(JSON.stringify(data.payload, null, 4));
         validate.attr("checked", true);
         last_data.json = true;
-      } catch (e) {
-        // payload is not a JSON
-        textarea.val(data.payload);
-        validate.removeAttr("checked");
       }
     }
   };
@@ -48,22 +45,33 @@ function setupTopic(topic) {
 
   update.click(function() {
     var val = textarea.val();
+    var settings = {
+      url: "/topics/"+ topic,
+      type: "PUT"
+    }
     if(validate.attr("checked")) {
       try {
-        val = JSON.stringify(jsonlint.parse(val));
+        val = JSON.parse(val);
+        if(typeof val == 'string') {
+          throw "invalid json";
+        }
+        settings.data = JSON.stringify(val);
+        settings.contentType = "application/json";
       } catch(e) {
-        //console.log(e);
         textarea.addClass("error");
         textarea_field.addClass("error");
         textarea_error.show();
         return false;
       }
+    } else {
+       settings.data = { payload: val };
     }
+
+    $.ajax(settings);
     textarea.removeClass("error");
     textarea_field.removeClass("error");
     textarea_error.hide();
 
-    $.post("/topics/"+ topic, { "_method": "put", payload: val });
     textarea.attr("readonly", true);
     validate.attr("disabled", true);
     edit.toggle();

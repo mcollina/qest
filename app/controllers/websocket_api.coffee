@@ -8,19 +8,16 @@ module.exports = (app) ->
 
     socket.on 'subscribe', (topic) ->
 
-      Data.find topic, (data) ->
+      subscription = (currentData) ->
+        socket.emit("/topics/#{topic}", currentData.value)
 
-        subscription = (currentData) ->
-          socket.emit("/topics/#{topic}", currentData.getValue())
+      subscriptions[topic] = subscription
 
-        subscriptions[topic] = subscription
+      Data.subscribe topic, subscription
 
-        data.on('change', subscription)
-
-        subscription(data) if data.getValue()
+      Data.find topic, (err, data) ->
+        subscription(data) if data?.value?
 
     socket.on 'disconnect', ->
-
       for topic, listener of subscriptions
-        Data.find topic, (data) ->
-          data.removeListener('change', listener)
+        Data.unsubscribe(topic, listener)

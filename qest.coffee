@@ -104,7 +104,6 @@ module.exports.setup = setup = (opts = {}) ->
 
   setupAscoltatore(opts)
 
-
 start = module.exports.start = (opts={}, cb=->) ->
 
   opts.port ||= argv.port

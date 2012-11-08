@@ -11,20 +11,21 @@
   "licenses": [
     "MIT"
   ],
-  "private": true,
   "dependencies": {
-    "coffee-script": "= 1.3.3",
+    "coffee-script": "~1.3.3",
     "optimist": "= 0.3.4",
-    "express": "= 3.0.0rc3",
+    "express": "~3.0.1",
     "hbs": "= 1.0.4",
     "socket.io": "= 0.9.10",
     "mqttjs": "= 0.1.7",
-    "redis": "= 0.7.1",
-    "hiredis": "= 0.1.13",
+    "redis": "~0.8.1",
+    "hiredis": "= 0.1.14",
     "connect-redis": "1.4.0",
     "markdown": "0.3.1",
     "mincer": "0.3.0",
-    "less": "~1.3.0"
+    "less": "~1.3.0",
+    "ascoltatori": "0.0.3",
+    "async": "~0.1.22"
   },
   "devDependencies": {
     "cucumber": "= 0.2.21",

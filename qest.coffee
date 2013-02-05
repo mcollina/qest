@@ -24,19 +24,23 @@ app.redis = {}
 
 module.exports.configure = configure = ->
   app.configure 'development', ->
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
-
+    app.use(express.errorHandler(dumpExceptions: true, showStack: true))
+  
   app.configure 'production', ->
     app.use(express.errorHandler())
-
+  
   app.configure -> 
     app.set('views', __dirname + '/app/views')
     app.set('view engine', 'hbs')
     app.use(express.bodyParser())
     app.use(express.methodOverride())
     app.use(express.cookieParser())
-    app.use(express.session(secret: "wyRLuS5A79wLn3ItlGVF61Gt", 
-      store: new RedisStore(client: app.redis.client), maxAge: 1000 * 60 * 60 * 24 * 14)) # two weeks
+    app.use(
+      express.session
+        secret: "wyRLuS5A79wLn3ItlGVF61Gt",
+        store: new RedisStore(client: app.redis.client),
+        maxAge: 1000 * 60 * 60 * 24 * 14 # two weeks
+    )
 
     app.use(app.router)
     app.use(express.static(__dirname + '/public'))
@@ -45,9 +49,9 @@ module.exports.configure = configure = ->
   io = app.io = require('socket.io').listen(http)
 
   io.configure 'production', ->
-    io.enable('browser client minification');  # send minified client
-    io.enable('browser client etag');          # apply etag caching logic based on version number
-    io.enable('browser client gzip');          # gzip the file
+    io.enable('browser client minification')  # send minified client
+    io.enable('browser client etag')          # apply etag caching logic based on version number
+    io.enable('browser client gzip')          # gzip the file
     io.set('log level', 0)
 
   io.configure 'test', ->
@@ -64,31 +68,32 @@ load = (key) ->
     if component.match /(js|coffee)$/
       component = path.basename(component, path.extname(component))
       loadedModule = require(loadPath + component)(app)
-      component = loadedModule.name if loadedModule?.name? and loadedModule.name != ""
+      if loadedModule?.name? and loadedModule.name != ""
+        component = loadedModule.name
       app[key][component] = loadedModule
 
 # Start the module if it's needed
 
-optionParser = optimist.
-  default('port', 3000).
-  default('mqtt', 1883).
-  default('redis-port', 6379).
-  default('redis-host', '127.0.0.1').
-  default('redis-db', 0).
-  usage("Usage: $0 [-p WEB-PORT] [-m MQTT-PORT] [-rp REDIS-PORT] [-rh REDIS-HOST]").
-  alias('port', 'p').
-  alias('mqtt', 'm').
-  alias('redis-port', 'rp').
-  alias('redis-host', 'rh').
-  alias('redis-db', 'rd').
-  describe('port', 'The port the web server will listen to').
-  describe('mqtt', 'The port the mqtt server will listen to').
-  describe('redis-port', 'The port of the redis server').
-  describe('redis-host', 'The host of the redis server').
-  boolean("help").
-  describe("help", "This help")
+op = optimist
+op = op.default('port', 3000)
+op = op.default('mqtt', 1883)
+op = op.default('redis-port', 6379)
+op = op.default('redis-host', '127.0.0.1')
+op = op.default('redis-db', 0)
+op = op.usage("Usage: $0 [-p WEB-PORT] [-m MQTT-PORT] [-rp REDIS-PORT] [-rh REDIS-HOST]").
+op = op.alias('port', 'p')
+op = op.alias('mqtt', 'm')
+op = op.alias('redis-port', 'rp')
+op = op.alias('redis-host', 'rh')
+op = op.alias('redis-db', 'rd')
+op = op.describe('port', 'The port the web server will listen to')
+op = op.describe('mqtt', 'The port the mqtt server will listen to')
+op = op.describe('redis-port', 'The port of the redis server')
+op = op.describe('redis-host', 'The host of the redis server')
+op = op.boolean("help")
+op = op.describe("help", "This help")
 
-argv = optionParser.argv
+argv = op.argv
 
 module.exports.setupAscoltatore = setupAscoltatore = (opts = {}) ->
   app.ascoltatore = new ascoltatori.RedisAscoltatore
@@ -113,9 +118,9 @@ start = module.exports.start = (opts={}, cb=->) ->
   opts.redisDB ||= argv['redis-db']
 
   if argv.help
-    optionParser.showHelp()
+    op.showHelp()
     return 1
-
+  
   setup(port: opts.redisPort, host: opts.redisHost, db: opts.redisDB)
   configure()
 

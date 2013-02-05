@@ -80,7 +80,7 @@ module.exports = (app) ->
       value = arg 
       callback = args.shift()
 
-    # FIXME this is not atomic, is it a problem?
+    # FIXME this is not atomic
     app.redis.client.get buildKey(key), (err, oldValue) ->
       data = Data.fromRedis(key, oldValue)
       data.value = value if value?

@@ -39,12 +39,12 @@ module.exports = (app) ->
     if (!paths) 
       # this will help us notify that given logicalPath is not found
       # without "breaking" view renderer
-      return new hbs.SafeString('<script type="application/javascript">alert(Javascript file ' +
-        JSON.stringify(logicalPath).replace(/"/g, '\\"') +
-        ' not found.")</script>')
+      return new hbs.SafeString("<script type=\"application/javascript\">alert('Javascript file
+        #{JSON.stringify(logicalPath).replace(/"/g, '\\"')}
+        not found.')</script>")
 
     result = paths.map (path) ->
-      '<script type="application/javascript" src="' + path + '"></script>'
+      "<script type=\"application/javascript\" src=\"#{path}\"></script>"
     new hbs.SafeString(result.join("\n"))
 
   hbs.registerHelper 'css', (logicalPath) ->
@@ -53,9 +53,9 @@ module.exports = (app) ->
     if (!paths) 
       # this will help us notify that given logicalPath is not found
       # without "breaking" view renderer
-      return new hbs.SafeString('<script type="application/javascript">alert(CSS file ' +
-        JSON.stringify(logicalPath).replace(/"/g, '\\"') +
-        ' not found.")</script>')
+      return new hbs.SafeString("<script type=\"application/javascript\">alert('CSS file
+        #{JSON.stringify(logicalPath).replace(/"/g, '\\"')}
+        not found.')</script>")
 
     result = paths.map (path) ->
       '<link rel="stylesheet" type="text/css" href="' + path + '" />'

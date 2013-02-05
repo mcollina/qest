@@ -51,17 +51,17 @@ module.exports = (app) ->
       Data.findOrCreate packet.topic, packet.payload
 
     client.on 'pingreq', (packet) ->
-	    client.pingresp()
+      client.pingresp()
 
     client.on 'disconnect', ->
       client.stream.end()
 
     client.on 'error', (error) ->
-      console.log error
       client.stream.end()
-
-   	client.on 'close', (err) ->
-      unsubscribeAll()
+      console.log error
     
+    client.on 'close', (err) ->
+      unsubscribeAll()
+
     client.on 'unsubscribe', (packet) ->
       client.unsuback(messageId: packet.messageId)

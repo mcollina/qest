@@ -48,7 +48,12 @@ module.exports = (app) ->
         )()
 
     client.on 'publish', (packet) ->
-      Data.findOrCreate packet.topic, packet.payload
+      payload = packet.payload
+      try
+        payload = JSON.parse(payload)
+      catch error
+        # nothing to do
+      Data.findOrCreate packet.topic, payload
 
     client.on 'pingreq', (packet) ->
 	    client.pingresp()

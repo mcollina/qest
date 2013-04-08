@@ -43,6 +43,8 @@ $ ./qest.js
 ## Examples
 
 * [NetworkButton](https://github.com/mcollina/qest/wiki/Network-Button-Example)
+* [NetworkButtonJSON](https://gist.github.com/mcollina/5337389), same as
+  before, but exchanging JSONs.
 
 ## Contribute
 
